@@ -637,3 +637,17 @@ function deleteItemProtected(id, room, itemId){
 </script>
 </body>
 </html>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+const SUPABASE_URL = "https://tmkiuebrkmfnpmuyxxwd.supabase.co";
+
+// Зураг дээрх Legacy `anon public` түлхүүрийг энд орууллаа:
+const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRta2l1ZWJya21mbnBtdXl4eHdkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MDk4NTY0ODAsImV4cCI6MjAyNTQzMjQ4MH0.XXXXX"; // Copy хийж авсан түлхүүрээ бүтнээр нь энд арилгаж тавиарай
+
+let dbClient = null;
+try {
+  if (window.supabase && typeof window.supabase.createClient === 'function') {
+    dbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+  }
+} catch(e) { console.error("Supabase init error:", e); }
+</script>
