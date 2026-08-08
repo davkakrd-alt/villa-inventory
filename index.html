@@ -18,6 +18,8 @@
     --red:#A63F2B;
     --red-bg:#F8E7E1;
     --gray-bg:#EAE7DD;
+    --green-bg:#E8F5E9;
+    --green:#2E7D32;
   }
   *{box-sizing:border-box;}
   html,body{margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
@@ -93,6 +95,7 @@
   .status-good-bg{background:#E7F0EC; color:var(--teal-deep); border:1px solid #BFDACE;}
   .status-warn-bg{background:var(--amber-bg); color:var(--amber); border:1px solid #E4C49B;}
   .status-bad-bg{background:var(--red-bg); color:var(--red); border:1px solid #E3B7AB;}
+  .status-done-bg{background:var(--green-bg); color:var(--green); border:1px solid #C8E6C9;}
 
   .room-tabs{display:flex; gap:4px; border-bottom:1px solid var(--border); padding:0 2px; flex-wrap:wrap;}
   .room-tab{padding:10px 14px; border-radius:8px 8px 0 0; cursor:pointer; font-weight:600; font-size:0.85rem; color:var(--ink-soft); border:1px solid transparent;}
@@ -100,14 +103,15 @@
   .room-tab.repair-tab{color:var(--amber);}
 
   .room-panel{border-radius:0 0 12px 12px; margin-top:0; overflow-x:auto;}
-  table{width:100%; border-collapse:collapse; font-size:0.88rem; min-width:540px;}
+  table{width:100%; border-collapse:collapse; font-size:0.88rem; min-width:580px;}
   thead th{text-align:left; color:var(--ink-soft); font-size:0.7rem; text-transform:uppercase; letter-spacing:0.03em; font-weight:600; padding-bottom:8px;}
   tbody tr{border-top:1px solid var(--border);}
   tbody td{padding:8px 2px;}
+  tbody tr.is-done { opacity: 0.6; text-decoration: line-through; }
   .col-num{width:28px; font-family:'Courier New',monospace; color:var(--ink-soft);}
   .col-photo{width:50px; text-align:center;}
   .col-count{width:65px;}
-  .col-status{width:170px;}
+  .col-status{width:150px;}
   .col-del{width:32px; text-align:right;}
 
   input.item-input{background:transparent; border:1px solid transparent; border-radius:6px; padding:6px 8px; width:100%; font-size:0.88rem; font-family:inherit;}
@@ -157,7 +161,7 @@ const supabase = (window.supabase && typeof window.supabase.createClient === 'fu
 <!-- Login Screen -->
 <div id="login-screen" class="login-overlay">
   <div class="login-box">
-    <h2>Villa Тооллого</h2>
+    <h2>Villa Тооллого & Засвар</h2>
     <p style="font-size: 0.85rem; color: var(--ink-soft); margin-top:4px;">Пин кодоо оруулж нэвтэрнэ үү</p>
     <input type="password" id="pin-input" placeholder="****" maxlength="8" onkeyup="if(event.key==='Enter') checkPin()">
     <button class="btn btn-primary" style="width: 100%; padding: 10px;" onclick="checkPin()">Нэвтрэх</button>
@@ -177,7 +181,7 @@ const supabase = (window.supabase && typeof window.supabase.createClient === 'fu
 <input type="file" id="global-file-input" accept="image/*" style="display:none;" onchange="handleFileSelected(this)">
 
 <script>
-const APP_PIN = "1234"; 
+const ADMIN_PIN = "1234"; // Засагдсан гэж тэмдэглэх болон устгах Админ PIN
 let ROOM_TYPES = ["Унтлагын", "Зочны", "Гадна", "Угаалгын", "Гал тогоо"];
 const REPAIR_TAB = "🛠️ Засвар";
 const DATA_KEY = "villa-inventory-data-v2";
@@ -195,12 +199,22 @@ let state = {
 };
 
 function checkPin() {
-  if(document.getElementById('pin-input').value === APP_PIN) {
+  const pin = document.getElementById('pin-input').value;
+  if(pin === ADMIN_PIN || pin === "0000") { // Энгийн ажилтны пин болон админ пин
     document.getElementById('login-screen').style.display = 'none';
     document.getElementById('app').style.display = 'block';
     loadData();
   } else {
     alert("Нэвтрэх пин код буруу байна!");
+  }
+}
+
+function verifyAdminPermission(actionName, callback) {
+  const inputPin = prompt(`"${actionName}" үйлдэл хийхэд АДМИН нууц үг шаардлагатай:`);
+  if(inputPin === ADMIN_PIN) {
+    callback();
+  } else if(inputPin !== null) {
+    alert("Нууц үг буруу байна! Зөвхөн админ өөрчлөх эрхтэй.");
   }
 }
 
@@ -287,23 +301,27 @@ function viewPhoto(url){
 function closePhotoModal(){ document.getElementById('photo-modal').style.display = 'none'; }
 
 function addVillaPrompt(){
-  const name = prompt("Шинэ Вилла дугаарыг оруулна уу:");
-  if(name && name.trim()){
-    const trimmed = name.trim();
-    if(state.villas.includes(trimmed)){ alert("Ийм вилла байна!"); return; }
-    state.villas.push(trimmed);
-    ensureVilla(trimmed);
-    saveData(); render();
-  }
+  verifyAdminPermission("Шинэ Вилла нэмэх", () => {
+    const name = prompt("Шинэ Вилла дугаарыг оруулна уу:");
+    if(name && name.trim()){
+      const trimmed = name.trim();
+      if(state.villas.includes(trimmed)){ alert("Ийм вилла байна!"); return; }
+      state.villas.push(trimmed);
+      ensureVilla(trimmed);
+      saveData(); render();
+    }
+  });
 }
 
 function deleteVilla(id){
-  if(confirm(`Та Villa ${id}-г устгахдаа итгэлтэй байна уу?`)){
-    state.villas = state.villas.filter(v => v !== id);
-    delete state.data[id];
-    if(state.selectedVilla === id) state.selectedVilla = null;
-    saveData(); render();
-  }
+  verifyAdminPermission(`Villa ${id}-г устгах`, () => {
+    if(confirm(`Та Villa ${id}-г устгахдаа итгэлтэй байна уу?`)){
+      state.villas = state.villas.filter(v => v !== id);
+      delete state.data[id];
+      if(state.selectedVilla === id) state.selectedVilla = null;
+      saveData(); render();
+    }
+  });
 }
 
 function villaIssueCount(id){
@@ -315,7 +333,10 @@ function villaIssueCount(id){
       if(item.status && item.status !== "Гэмтэлгүй байгаа") count++;
     });
   });
-  count += (v.rooms[REPAIR_TAB]||[]).length;
+  // Зөвхөн засагдаагүй ажлуудыг тоолно
+  (v.rooms[REPAIR_TAB]||[]).forEach(item => {
+    if(!item.isDone) count++;
+  });
   return count;
 }
 
@@ -334,7 +355,7 @@ function render(){
       <div class="header-row">
         <div>
           <h1>Villa Тооллого & Засвар</h1>
-          <div class="totalcount">${state.villas.length} байшин &middot; ${totalIssuesAll()} ажил / гэмтэл бүртгэгдсэн</div>
+          <div class="totalcount">${state.villas.length} байшин &middot; ${totalIssuesAll()} нээлттэй засвар / гэмтэл</div>
         </div>
         <button class="btn btn-ghost" onclick="location.reload()">Гарах</button>
       </div>
@@ -396,7 +417,7 @@ function renderVillaDetail(id){
   });
   
   const repairActive = state.activeRoom === REPAIR_TAB ? 'active' : '';
-  const repairCount = (v.rooms[REPAIR_TAB]||[]).length;
+  const repairCount = (v.rooms[REPAIR_TAB]||[]).filter(i => !i.isDone).length;
   html += `<div class="room-tab repair-tab ${repairActive}" onclick="setActiveRoom('${REPAIR_TAB}')">🛠️ Засвар ${repairCount>0 ? `(${repairCount})`:''}</div></div>`;
 
   const items = v.rooms[state.activeRoom] || [];
@@ -404,13 +425,33 @@ function renderVillaDetail(id){
   if(state.activeRoom === REPAIR_TAB){
     // Засварын ажлын хэсэг
     html += `<div class="card room-panel" style="padding:16px;">
-      <p style="font-size:0.85rem; color:var(--ink-soft); margin-bottom:12px;">Энд тухайн виллад хийгдэх тусгай засварын ажлуудыг (жишээ нь: Шүршүүр засах, Цоож солих) тэмдэглэнэ.</p>
-      <table><thead><tr><th class="col-num">№</th><th>Хийгдэх засварын ажил</th><th class="col-del"></th></tr></thead><tbody>`;
+      <p style="font-size:0.85rem; color:var(--ink-soft); margin-bottom:12px;">🔒 Засвар дууссан ("Засагдсан") гэж тэмдэглэх болон ажлыг устгахад Админ пин код шаардлагатай.</p>
+      <table><thead><tr>
+        <th class="col-num">№</th>
+        <th class="col-photo">Зураг</th>
+        <th>Хийгдэх засварын ажил</th>
+        <th class="col-status">Төлөв</th>
+        <th class="col-del"></th>
+      </tr></thead><tbody>`;
+      
     items.forEach((item, idx) => {
-      html += `<tr>
+      const photoHtml = item.photo 
+        ? `<img src="${item.photo}" class="photo-thumb" onclick="viewPhoto('${item.photo}')">` 
+        : `<button class="photo-thumb" onclick="triggerPhotoUpload('${id}','${REPAIR_TAB}','${item.id}')">📷</button>`;
+
+      const isDoneClass = item.isDone ? 'is-done' : '';
+
+      html += `<tr class="${isDoneClass}">
         <td class="col-num">${idx+1}</td>
-        <td><input class="item-input" type="text" value="${item.name||''}" placeholder="Жишээ нь: Сангийн хоолой засах" onchange="updateItem('${id}','${REPAIR_TAB}','${item.id}','name',this.value)"></td>
-        <td class="col-del"><button class="btn-danger" onclick="deleteItem('${id}','${REPAIR_TAB}','${item.id}')">&times;</button></td>
+        <td class="col-photo">${photoHtml}</td>
+        <td><input class="item-input" type="text" value="${item.name||''}" placeholder="Жишээ нь: Шүршүүрийн хоолой засах" onchange="updateItem('${id}','${REPAIR_TAB}','${item.id}','name',this.value)"></td>
+        <td class="col-status">
+          <label style="cursor:pointer; display:inline-flex; align-items:center; gap:4px; font-weight:bold; font-size:0.8rem; color:${item.isDone ? 'var(--green)' : 'var(--red)'};">
+            <input type="checkbox" ${item.isDone ? 'checked' : ''} onchange="toggleDoneProtected('${id}','${REPAIR_TAB}','${item.id}', this)">
+            ${item.isDone ? '✅ Засагдсан' : '⏳ Хүлээгдэж буй'}
+          </label>
+        </td>
+        <td class="col-del"><button class="btn-danger" onclick="deleteItemProtected('${id}','${REPAIR_TAB}','${item.id}')">&times;</button></td>
       </tr>`;
     });
     html += `</tbody></table>
@@ -443,7 +484,7 @@ function renderVillaDetail(id){
               ${["Гэмтэлгүй байгаа", "Бага зэрэг гэмтэлтэй", "Эвдэрсэн", "Гэмтэлтэй", "Дутуу"].map(s => `<option value="${s}" ${item.status===s?'selected':''}>${s}</option>`).join('')}
             </select>
           </td>
-          <td class="col-del"><button class="btn-danger" onclick="deleteItem('${id}','${state.activeRoom}','${item.id}')">&times;</button></td>
+          <td class="col-del"><button class="btn-danger" onclick="deleteItemProtected('${id}','${state.activeRoom}','${item.id}')">&times;</button></td>
         </tr>
       `;
     });
@@ -483,7 +524,7 @@ function renderReport(){
 
   html += `<div class="card">
     <h3 style="margin-bottom:10px;">2. Хийгдэх тусгай засварын ажлууд</h3>
-    <table><thead><tr><th>Villa</th><th>Засварын ажил / Тэмдэглэл</th></tr></thead><tbody>`;
+    <table><thead><tr><th>Villa</th><th>Зураг</th><th>Засварын ажил / Тэмдэглэл</th><th>Төлөв</th></tr></thead><tbody>`;
 
   let hasRepairs = false;
   state.villas.forEach(id => {
@@ -492,11 +533,13 @@ function renderReport(){
     (v.rooms[REPAIR_TAB]||[]).forEach(item => {
       if(item.name && item.name.trim() !== ""){
         hasRepairs = true;
-        html += `<tr><td><b>Villa ${id}</b></td><td>${item.name}</td></tr>`;
+        const photoThumb = item.photo ? `<img src="${item.photo}" class="photo-thumb" onclick="viewPhoto('${item.photo}')">` : '-';
+        const doneBadge = item.isDone ? `<span class="status-chip status-done-bg">✅ Засагдсан</span>` : `<span class="status-chip status-bad-bg">⏳ Хүлээгдэж буй</span>`;
+        html += `<tr class="${item.isDone ? 'is-done' : ''}"><td><b>Villa ${id}</b></td><td>${photoThumb}</td><td>${item.name}</td><td>${doneBadge}</td></tr>`;
       }
     });
   });
-  if(!hasRepairs) html += `<tr><td colspan="2" style="text-align:center; color:var(--ink-soft); padding:12px;">Засварын ажил бүртгэгдээгүй байна.</td></tr>`;
+  if(!hasRepairs) html += `<tr><td colspan="4" style="text-align:center; color:var(--ink-soft); padding:12px;">Засварын ажил бүртгэгдээгүй байна.</td></tr>`;
   html += `</tbody></table></div>`;
 
   return html;
@@ -510,7 +553,7 @@ function statusClass(status){
 
 function addItem(id, room){
   ensureVilla(id);
-  state.data[id].rooms[room].push({id: uid(), name:"", count:1, status:"Гэмтэлгүй байгаа", photo:null});
+  state.data[id].rooms[room].push({id: uid(), name:"", count:1, status:"Гэмтэлгүй байгаа", photo:null, isDone: false});
   saveData(); render();
 }
 
@@ -521,9 +564,25 @@ function updateItem(id, room, itemId, field, value){
   saveData();
 }
 
-function deleteItem(id, room, itemId){
-  state.data[id].rooms[room] = state.data[id].rooms[room].filter(i => i.id !== itemId);
-  saveData(); render();
+function toggleDoneProtected(id, room, itemId, checkbox) {
+  const isChecking = checkbox.checked;
+  // Буцааж цуцлах буюу засагдсанаар тэмдэглэх үед нууц үг асууна
+  verifyAdminPermission(isChecking ? "Засагдсан гэж тэмдэглэх" : "Төлөв өөрчлөх", () => {
+    const item = state.data[id].rooms[room].find(i => i.id === itemId);
+    if(item) {
+      item.isDone = isChecking;
+      saveData();
+      render();
+    }
+  });
+  checkbox.checked = !isChecking; // Амжилтгүй бол хуучин хэвэнд нь байлгана
+}
+
+function deleteItemProtected(id, room, itemId){
+  verifyAdminPermission("Ажил/Тавилга устгах", () => {
+    state.data[id].rooms[room] = state.data[id].rooms[room].filter(i => i.id !== itemId);
+    saveData(); render();
+  });
 }
 </script>
 </body>
