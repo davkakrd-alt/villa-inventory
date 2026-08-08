@@ -52,7 +52,6 @@
   .header-row{display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;}
   h1{font-size:1.6rem; font-weight:600;}
   .totalcount{font-family:'Courier New',monospace; font-size:0.85rem; color:var(--ink-soft);}
-  .subtitle{color:var(--ink-soft); margin-top:4px; font-size:0.85rem;}
 
   .tilegrid{
     display:grid;
@@ -87,7 +86,6 @@
     font-size: 1.4rem;
     background: transparent;
   }
-  .add-villa-tile:hover { background: rgba(43,110,94,0.05); }
 
   .card{background:var(--base-raised); border:1px solid var(--border); border-radius:12px; padding:16px; margin-bottom:16px;}
   .card.empty{text-align:center; color:var(--ink-soft); padding:36px 16px;}
@@ -95,27 +93,40 @@
   .status-good-bg{background:#E7F0EC; color:var(--teal-deep); border:1px solid #BFDACE;}
   .status-warn-bg{background:var(--amber-bg); color:var(--amber); border:1px solid #E4C49B;}
   .status-bad-bg{background:var(--red-bg); color:var(--red); border:1px solid #E3B7AB;}
-  .status-empty-bg{background:var(--gray-bg); color:var(--ink-soft); border:1px solid var(--border);}
 
   .room-tabs{display:flex; gap:4px; border-bottom:1px solid var(--border); padding:0 2px; flex-wrap:wrap;}
   .room-tab{padding:10px 14px; border-radius:8px 8px 0 0; cursor:pointer; font-weight:600; font-size:0.85rem; color:var(--ink-soft); border:1px solid transparent;}
   .room-tab.active{background:var(--base-raised); border:1px solid var(--border); border-bottom:1px solid var(--base-raised); color:var(--ink); margin-bottom:-1px;}
 
   .room-panel{border-radius:0 0 12px 12px; margin-top:0; overflow-x:auto;}
-  table{width:100%; border-collapse:collapse; font-size:0.88rem; min-width:480px;}
+  table{width:100%; border-collapse:collapse; font-size:0.88rem; min-width:540px;}
   thead th{text-align:left; color:var(--ink-soft); font-size:0.7rem; text-transform:uppercase; letter-spacing:0.03em; font-weight:600; padding-bottom:8px;}
   tbody tr{border-top:1px solid var(--border);}
   tbody td{padding:8px 2px;}
   .col-num{width:28px; font-family:'Courier New',monospace; color:var(--ink-soft);}
-  .col-count{width:70px;}
-  .col-status{width:180px;}
-  .col-del{width:36px; text-align:right;}
+  .col-photo{width:50px; text-align:center;}
+  .col-count{width:65px;}
+  .col-status{width:170px;}
+  .col-del{width:32px; text-align:right;}
 
   input.item-input{background:transparent; border:1px solid transparent; border-radius:6px; padding:6px 8px; width:100%; font-size:0.88rem; font-family:inherit;}
   input.item-input:hover, input.item-input:focus{border-color:var(--teal); background:#fff; outline:none;}
   input.count-input{font-family:'Courier New',monospace;}
 
   select.status-select{font-size:0.78rem; border-radius:999px; padding:6px 8px; border:1px solid transparent; font-weight:600; cursor:pointer; width:100%;}
+
+  /* Photo Upload Component */
+  .photo-thumb{
+    width:38px; height:38px; border-radius:6px; object-fit:cover; cursor:pointer;
+    border:1px solid var(--border); display:inline-flex; align-items:center; justify-content:center;
+    background:var(--gray-bg); color:var(--ink-soft); font-size:0.9rem;
+  }
+  .photo-thumb:hover{ border-color:var(--teal); }
+
+  /* Modal Style */
+  .modal-overlay{position:fixed; inset:0; background:rgba(0,0,0,0.7); display:flex; align-items:center; justify-content:center; z-index:3000; padding:16px;}
+  .modal-box{background:var(--base-raised); border-radius:12px; padding:16px; max-width:90vw; max-height:90vh; display:flex; flex-direction:column; gap:12px; align-items:center;}
+  .modal-img{max-width:80vw; max-height:70vh; border-radius:8px; object-fit:contain;}
 
   .btn{padding:8px 14px; border-radius:8px; font-weight:600; font-size:0.82rem; cursor:pointer; border:none; transition:opacity .12s; font-family:inherit; display:inline-flex; align-items:center; justify-content:center;}
   .btn-primary{background:var(--teal); color:white;}
@@ -147,22 +158,33 @@ const supabase = (window.supabase && typeof window.supabase.createClient === 'fu
 
 <div class="wrap" id="app" style="display: none;"><div class="loading">Дата синк хийж байна...</div></div>
 
-<script>
-// НЭВТРЭХ НУУЦ ҮГ (Хүссэн кодоороо сольж болно)
-const APP_PIN = "1234"; 
+<!-- Image Modal -->
+<div id="photo-modal" class="modal-overlay" style="display:none;">
+  <div class="modal-box">
+    <img id="modal-img-element" class="modal-img" src="" alt="Зураг">
+    <div style="display:flex; gap:8px; width:100%; justify-content:flex-end;">
+      <button class="btn btn-ghost" onclick="closePhotoModal()">Хаах</button>
+    </div>
+  </div>
+</div>
 
+<input type="file" id="global-file-input" accept="image/*" style="display:none;" onchange="handleFileSelected(this)">
+
+<script>
+const APP_PIN = "1234"; 
 let ROOM_TYPES = ["Унтлагын", "Зочны", "Гадна", "Угаалгын", "Гал тогоо"];
 const DATA_KEY = "villa-inventory-data-v2";
 const VILLA_LIST_KEY = "villa-list-v2";
 
 let state = {
-  villas: Array.from({length: 31}, (_, i) => String(i + 1)), // 1-31 вилла
+  villas: Array.from({length: 31}, (_, i) => String(i + 1)),
   selectedVilla: null,
   activeRoom: ROOM_TYPES[0],
   data: {},
   loaded: false,
   saveStatus: 'saved',
-  view: 'main'
+  view: 'main',
+  uploadTarget: null
 };
 
 function checkPin() {
@@ -195,15 +217,12 @@ function uid(){ return Math.random().toString(36).slice(2,9); }
 async function loadData(){
   if(supabase){
     try{
-      // Виллануудын жагсаалт авах
       const { data: vList } = await supabase.from('villa_store').select('value').eq('key', VILLA_LIST_KEY).maybeSingle();
       if(vList && vList.value) state.villas = vList.value;
 
-      // Тооллогын дата авах
       const { data } = await supabase.from('villa_store').select('value').eq('key', DATA_KEY).maybeSingle();
       if(data && data.value) state.data = data.value;
 
-      // Real-time listener
       supabase.channel('public:villa_store')
         .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'villa_store' }, payload => {
           if(payload.new && payload.new.key === DATA_KEY){
@@ -242,8 +261,42 @@ function renderSaveStatus(){
   el.textContent = state.saveStatus === 'saving' ? '☁️ Хадгалж байна...' : '✓ Хадгалагдсан (Cloud)';
 }
 
+function triggerPhotoUpload(id, room, itemId){
+  state.uploadTarget = { id, room, itemId };
+  document.getElementById('global-file-input').click();
+}
+
+function handleFileSelected(input){
+  if(!input.files || !input.files[0] || !state.uploadTarget) return;
+  const file = input.files[0];
+  const reader = new FileReader();
+  
+  // Зургийг хэмжээ багатай (Base64) болгож датабаазад шууд хадгалах
+  reader.onload = function(e){
+    const photoUrl = e.target.result;
+    const { id, room, itemId } = state.uploadTarget;
+    const item = state.data[id].rooms[room].find(i => i.id === itemId);
+    if(item){
+      item.photo = photoUrl;
+      saveData();
+      render();
+    }
+    input.value = "";
+  };
+  reader.readAsDataURL(file);
+}
+
+function viewPhoto(url){
+  document.getElementById('modal-img-element').src = url;
+  document.getElementById('photo-modal').style.display = 'flex';
+}
+
+function closePhotoModal(){
+  document.getElementById('photo-modal').style.display = 'none';
+}
+
 function addVillaPrompt(){
-  const name = prompt("Шинэ Вилла эсвэл Байшингийн нэр/дугаарыг оруулна уу (Жишээ нь: 32 эсвэл VIP-1):");
+  const name = prompt("Шинэ Вилла эсвэл Байшингийн нэр/дугаарыг оруулна уу:");
   if(name && name.trim()){
     const trimmed = name.trim();
     if(state.villas.includes(trimmed)){
@@ -311,7 +364,6 @@ function render(){
     return;
   }
 
-  // Виллануудын grid
   html += `<div class="tilegrid">`;
   state.villas.forEach(id => {
     const issues = villaIssueCount(id);
@@ -324,7 +376,6 @@ function render(){
       </div>
     `;
   });
-  // Шинэ вилла нэмэх товч
   html += `<div class="tile add-villa-tile" onclick="addVillaPrompt()" title="Шинэ байшин нэмэх">+</div>`;
   html += `</div>`;
 
@@ -360,13 +411,23 @@ function renderVillaDetail(id){
 
   const items = v.rooms[state.activeRoom] || [];
   html += `<div class="card room-panel"><table><thead><tr>
-    <th class="col-num">№</th><th>Тавилга</th><th class="col-count">Тоо</th><th class="col-status">Төлөв</th><th class="col-del"></th>
+    <th class="col-num">№</th>
+    <th class="col-photo">Зураг</th>
+    <th>Тавилга</th>
+    <th class="col-count">Тоо</th>
+    <th class="col-status">Төлөв</th>
+    <th class="col-del"></th>
   </tr></thead><tbody>`;
 
   items.forEach((item, idx) => {
+    const photoHtml = item.photo 
+      ? `<img src="${item.photo}" class="photo-thumb" onclick="viewPhoto('${item.photo}')">` 
+      : `<button class="photo-thumb" onclick="triggerPhotoUpload('${id}','${state.activeRoom}','${item.id}')">📷</button>`;
+
     html += `
       <tr>
         <td class="col-num">${idx+1}</td>
+        <td class="col-photo">${photoHtml}</td>
         <td><input class="item-input" type="text" value="${item.name||''}" placeholder="Тавилгын нэр" onchange="updateItem('${id}','${state.activeRoom}','${item.id}','name',this.value)"></td>
         <td class="col-count"><input class="item-input count-input" type="number" value="${item.count||1}" onchange="updateItem('${id}','${state.activeRoom}','${item.id}','count',this.value)"></td>
         <td class="col-status">
@@ -385,7 +446,7 @@ function renderVillaDetail(id){
 }
 
 function renderReport(){
-  let html = `<div class="card"><h2>Гэмтэлтэй тавилгын нэгтгэл</h2></div><div class="card"><table><thead><tr><th>Villa</th><th>Өрөө</th><th>Тавилга</th><th>Тоо</th><th>Төлөв</th></tr></thead><tbody>`;
+  let html = `<div class="card"><h2>Гэмтэлтэй тавилгын нэгтгэл</h2></div><div class="card"><table><thead><tr><th>Villa</th><th>Өрөө</th><th>Зураг</th><th>Тавилга</th><th>Тоо</th><th>Төлөв</th></tr></thead><tbody>`;
   let hasIssues = false;
   state.villas.forEach(id => {
     const v = state.data[id];
@@ -394,13 +455,14 @@ function renderReport(){
       (v.rooms[r]||[]).forEach(item => {
         if(item.status && item.status !== "Гэмтэлгүй байгаа"){
           hasIssues = true;
-          html += `<tr><td><b>${id}</b></td><td>${r}</td><td>${item.name}</td><td>${item.count}</td><td><span class="status-chip ${statusClass(item.status)}">${item.status}</span></td></tr>`;
+          const photoThumb = item.photo ? `<img src="${item.photo}" class="photo-thumb" onclick="viewPhoto('${item.photo}')">` : '-';
+          html += `<tr><td><b>${id}</b></td><td>${r}</td><td>${photoThumb}</td><td>${item.name}</td><td>${item.count}</td><td><span class="status-chip ${statusClass(item.status)}">${item.status}</span></td></tr>`;
         }
       });
     });
   });
   if(!hasIssues){
-    html += `<tr><td colspan="5" style="text-align:center; padding:20px; color:var(--ink-soft);">Одоогоор гэмтэлтэй тавилга бүртгэгдээгүй байна.</td></tr>`;
+    html += `<tr><td colspan="6" style="text-align:center; padding:20px; color:var(--ink-soft);">Одоогоор гэмтэлтэй тавилга бүртгэгдээгүй байна.</td></tr>`;
   }
   html += `</tbody></table></div>`;
   return html;
@@ -414,7 +476,7 @@ function statusClass(status){
 
 function addItem(id, room){
   ensureVilla(id);
-  state.data[id].rooms[room].push({id: uid(), name:"", count:1, status:"Гэмтэлгүй байгаа"});
+  state.data[id].rooms[room].push({id: uid(), name:"", count:1, status:"Гэмтэлгүй байгаа", photo:null});
   saveData();
   render();
 }
