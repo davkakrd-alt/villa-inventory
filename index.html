@@ -138,6 +138,18 @@
     .card{border:1px solid #ccc; box-shadow:none; break-inside:avoid;}
   }
 </style>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<script>
+const SUPABASE_URL = "https://tmkiuebrkmfnpmuyxxwd.supabase.co";
+
+const SUPABASE_KEY = "sb_publishable_5JQga2wW_O8OAqkZTaEf_Q_C1mtz87X";
+
+const supabase = window.supabase.createClient(
+  SUPABASE_URL,
+  SUPABASE_KEY
+);
+</script>
 </head>
 <body>
 <div class="wrap" id="app"><div class="loading">Ачааллаж байна...</div></div>
