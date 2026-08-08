@@ -2,7 +2,7 @@
 <html lang="mn">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Villa Тооллого — Нэгтгэл</title>
 <style>
   :root{
@@ -20,28 +20,42 @@
     --gray-bg:#EAE7DD;
   }
   *{box-sizing:border-box;}
-  html,body{margin:0;padding:0;}
+  html,body{margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
   body{
     background:var(--base);
     color:var(--ink);
     font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Inter,Roboto,sans-serif;
     line-height:1.4;
   }
-  .wrap{max-width:1100px; margin:0 auto; padding:24px 16px 60px;}
+  .wrap{max-width:1100px; margin:0 auto; padding:16px 12px 60px;}
   h1,h2,h3{font-family:Georgia,'Times New Roman',serif; margin:0;}
-  .mono{font-family:'Courier New',monospace;}
 
-  header{margin-bottom:28px;}
+  /* Login Screen Style */
+  .login-overlay {
+    position: fixed; inset: 0; background: var(--base);
+    display: flex; align-items: center; justify-content: center; z-index: 2000;
+  }
+  .login-box {
+    background: var(--base-raised); border: 1px solid var(--border);
+    padding: 30px; border-radius: 12px; text-align: center; max-width: 320px; width: 90%;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  }
+  .login-box input {
+    width: 100%; padding: 12px; margin: 16px 0; text-align: center;
+    font-size: 1.2rem; letter-spacing: 4px; border: 1px solid var(--border); border-radius: 8px;
+  }
+
+  header{margin-bottom:20px;}
   .header-row{display:flex; align-items:baseline; justify-content:space-between; flex-wrap:wrap; gap:8px;}
-  h1{font-size:2rem; font-weight:600;}
-  .totalcount{font-family:'Courier New',monospace; font-size:0.9rem; color:var(--ink-soft);}
-  .subtitle{color:var(--ink-soft); margin-top:6px; font-size:0.9rem;}
+  h1{font-size:1.6rem; font-weight:600;}
+  .totalcount{font-family:'Courier New',monospace; font-size:0.85rem; color:var(--ink-soft);}
+  .subtitle{color:var(--ink-soft); margin-top:4px; font-size:0.85rem;}
 
   .tilegrid{
     display:grid;
-    grid-template-columns:repeat(auto-fill, minmax(64px,1fr));
-    gap:10px;
-    margin-bottom:30px;
+    grid-template-columns:repeat(auto-fill, minmax(62px,1fr));
+    gap:8px;
+    margin-bottom:24px;
   }
   .tile{
     aspect-ratio:1/1;
@@ -55,342 +69,204 @@
     background:var(--base-raised);
     transition:transform .12s ease, box-shadow .12s ease, border-color .12s ease;
     position:relative;
+    user-select:none;
   }
-  .tile:hover{transform:translateY(-2px); box-shadow:0 6px 16px rgba(30,36,32,0.10);}
+  .tile:active{transform:scale(0.96);}
   .tile.selected{border-color:var(--teal); box-shadow:0 0 0 2px var(--teal);}
-  .tile .num{font-family:'Courier New',monospace; font-weight:700; font-size:1.1rem;}
+  .tile .num{font-family:'Courier New',monospace; font-weight:700; font-size:0.95rem;}
   .tile .badge{font-family:'Courier New',monospace; font-size:0.65rem; color:var(--red); font-weight:700;}
-  .tile .dot{width:8px;height:8px;border-radius:50%;position:absolute;top:8px;right:8px;}
+  .tile .dot{width:7px;height:7px;border-radius:50%;position:absolute;top:6px;right:6px;}
 
-  .card{background:var(--base-raised); border:1px solid var(--border); border-radius:12px; padding:20px; margin-bottom:24px;}
-  .card.empty{text-align:center; color:var(--ink-soft); padding:48px;}
+  .add-villa-tile {
+    border: 1.5px dashed var(--teal);
+    color: var(--teal);
+    font-weight: bold;
+    font-size: 1.2rem;
+  }
 
-  .issues-card-head{display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;}
-  .issues-card-head h2{font-size:1.25rem; font-weight:600;}
-  .badge-pill{font-family:'Courier New',monospace; font-size:0.85rem; padding:4px 12px; border-radius:999px; font-weight:700;}
+  .card{background:var(--base-raised); border:1px solid var(--border); border-radius:12px; padding:16px; margin-bottom:16px;}
+  .card.empty{text-align:center; color:var(--ink-soft); padding:36px 16px;}
+
+  .issues-card-head{display:flex; align-items:center; justify-content:space-between; margin-bottom:10px;}
+  .issues-card-head h2{font-size:1.1rem; font-weight:600;}
 
   .status-good-bg{background:#E7F0EC; color:var(--teal-deep); border:1px solid #BFDACE;}
   .status-warn-bg{background:var(--amber-bg); color:var(--amber); border:1px solid #E4C49B;}
   .status-bad-bg{background:var(--red-bg); color:var(--red); border:1px solid #E3B7AB;}
   .status-empty-bg{background:var(--gray-bg); color:var(--ink-soft); border:1px solid var(--border);}
 
-  .issue-row{display:flex; align-items:center; justify-content:space-between; font-size:0.9rem; padding:7px 0; border-bottom:1px solid var(--border);}
-  .issue-row:last-child{border-bottom:none;}
-  .issue-room{color:var(--ink-soft); font-family:'Courier New',monospace; font-size:0.75rem; margin-right:8px;}
-  .issue-count{color:var(--ink-soft);}
-  .status-chip{padding:2px 10px; border-radius:999px; font-size:0.75rem; font-weight:600; white-space:nowrap;}
-
-  .room-tabs{display:flex; gap:4px; border-bottom:1px solid var(--border); padding:0 4px; flex-wrap:wrap;}
-  .room-tab{padding:8px 16px; border-radius:8px 8px 0 0; cursor:pointer; font-weight:600; font-size:0.88rem; color:var(--ink-soft); border:1px solid transparent;}
+  .room-tabs{display:flex; gap:4px; border-bottom:1px solid var(--border); padding:0 2px; flex-wrap:wrap;}
+  .room-tab{padding:10px 14px; border-radius:8px 8px 0 0; cursor:pointer; font-weight:600; font-size:0.85rem; color:var(--ink-soft); border:1px solid transparent;}
   .room-tab.active{background:var(--base-raised); border:1px solid var(--border); border-bottom:1px solid var(--base-raised); color:var(--ink); margin-bottom:-1px;}
-  .room-tab-repair{margin-left:auto; color:var(--amber);}
-  .room-tab-repair.active{color:var(--amber);}
-  .room-tab-add{color:var(--teal); font-weight:700;}
-  .tab-count{background:var(--amber); color:#fff; border-radius:999px; font-size:0.7rem; padding:1px 7px; font-weight:700; font-family:'Courier New',monospace;}
-  .save-status{font-size:0.8rem; font-family:'Courier New',monospace; min-width:0;}
-  .save-status-saving{color:var(--ink-soft);}
-  .save-status-saved{color:#2E7D32;}
-  .save-status-error{color:var(--red);}
-  .storage-note{font-size:0.78rem; color:var(--ink-soft);}
-  .storage-warn{color:var(--red); font-weight:600;}
 
-  .room-panel{border-radius:0 0 12px 12px; margin-top:0;}
-  table{width:100%; border-collapse:collapse; font-size:0.9rem;}
-  thead th{text-align:left; color:var(--ink-soft); font-size:0.72rem; text-transform:uppercase; letter-spacing:0.03em; font-weight:500; padding-bottom:8px;}
+  .room-panel{border-radius:0 0 12px 12px; margin-top:0; overflow-x:auto;}
+  table{width:100%; border-collapse:collapse; font-size:0.88rem; min-width:480px;}
+  thead th{text-align:left; color:var(--ink-soft); font-size:0.7rem; text-transform:uppercase; letter-spacing:0.03em; font-weight:600; padding-bottom:8px;}
   tbody tr{border-top:1px solid var(--border);}
-  tbody td{padding:6px 4px;}
-  .col-num{width:34px; font-family:'Courier New',monospace; color:var(--ink-soft);}
-  .col-count{width:80px;}
-  .col-status{width:230px;}
-  .col-del{width:34px; text-align:right;}
+  tbody td{padding:8px 2px;}
+  .col-num{width:28px; font-family:'Courier New',monospace; color:var(--ink-soft);}
+  .col-count{width:65px;}
+  .col-status{width:180px;}
+  .col-del{width:32px; text-align:right;}
 
-  input.item-input{background:transparent; border:1px solid transparent; border-radius:6px; padding:4px 8px; width:100%; font-size:0.9rem; font-family:inherit;}
-  input.item-input:hover{border-color:var(--border);}
-  input.item-input:focus{outline:none; border-color:var(--teal); background:#fff;}
+  input.item-input{background:transparent; border:1px solid transparent; border-radius:6px; padding:6px 8px; width:100%; font-size:0.88rem; font-family:inherit;}
+  input.item-input:hover, input.item-input:focus{border-color:var(--teal); background:#fff; outline:none;}
   input.count-input{font-family:'Courier New',monospace;}
 
-  select.status-select{font-size:0.8rem; border-radius:999px; padding:4px 10px; border:1px solid transparent; font-weight:600; cursor:pointer; width:100%;}
+  select.status-select{font-size:0.78rem; border-radius:999px; padding:6px 8px; border:1px solid transparent; font-weight:600; cursor:pointer; width:100%;}
 
-  textarea{background:transparent; border:1px solid var(--border); border-radius:8px; padding:10px; width:100%; font-family:inherit; font-size:0.9rem; resize:vertical;}
-  textarea:focus{outline:none; border-color:var(--teal);}
-
-  .btn{padding:6px 14px; border-radius:8px; font-weight:600; font-size:0.85rem; cursor:pointer; border:none; transition:opacity .12s; font-family:inherit;}
-  .btn:hover{opacity:0.85;}
+  .btn{padding:8px 14px; border-radius:8px; font-weight:600; font-size:0.82rem; cursor:pointer; border:none; transition:opacity .12s; font-family:inherit; display:inline-flex; align-items:center; justify-content:center;}
+  .btn-primary{background:var(--teal); color:white;}
   .btn-ghost{background:transparent; color:var(--ink-soft); border:1px solid var(--border);}
-  .btn-danger{background:transparent; color:var(--red); border:none; font-size:1rem; cursor:pointer;}
-  .empty-note{font-size:0.9rem; color:var(--ink-soft); padding:16px 0; text-align:center;}
-  .section-title{font-size:1.05rem; font-weight:600; margin-bottom:8px;}
-  .loading{text-align:center; padding:100px 0; color:var(--ink-soft);}
-
-  .col-photo{width:54px;}
-  .photo-thumb{width:42px; height:42px; border-radius:8px; object-fit:cover; cursor:pointer; border:1px solid var(--border); display:block;}
-  .photo-thumb.empty{display:flex; align-items:center; justify-content:center; color:var(--ink-soft); font-size:1.3rem; font-weight:400; background:var(--gray-bg); line-height:1;}
-  .photo-thumb.empty:hover{background:var(--border);}
-  .photo-thumb.uploading{display:flex; align-items:center; justify-content:center; color:var(--ink-soft); font-size:0.65rem; background:var(--gray-bg); cursor:default; text-align:center;}
-
-  .modal-overlay{position:fixed; inset:0; background:rgba(30,36,32,0.62); display:flex; align-items:center; justify-content:center; z-index:1000; padding:20px;}
-  .modal-box{background:var(--base-raised); border-radius:12px; padding:16px; max-width:92vw; max-height:90vh; display:flex; flex-direction:column; gap:12px; box-shadow:0 20px 60px rgba(0,0,0,0.3);}
-  .modal-img{max-width:80vw; max-height:68vh; border-radius:8px; object-fit:contain; display:block;}
-  .modal-actions{display:flex; gap:8px; justify-content:flex-end;}
-  .btn-danger-outline{background:transparent; color:var(--red); border:1px solid var(--red);}
-
-  @media print{
-    .tilegrid, .no-print, header .subtitle, header div[style]{display:none !important;}
-    body{background:#fff;}
-    .card{border:1px solid #ccc; box-shadow:none; break-inside:avoid;}
-  }
+  .btn-danger{background:transparent; color:var(--red); border:none; font-size:1.2rem; cursor:pointer; padding:4px 8px;}
+  .status-chip{padding:3px 8px; border-radius:999px; font-size:0.72rem; font-weight:600;}
+  .loading{text-align:center; padding:80px 0; color:var(--ink-soft); font-size:1rem;}
 </style>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 const SUPABASE_URL = "https://tmkiuebrkmfnpmuyxxwd.supabase.co";
 const SUPABASE_KEY = "sb_publishable_5JQga2wW_O8OAqkZTaEf_Q_C1mtz87X";
 const supabase = (window.supabase && typeof window.supabase.createClient === 'function')
   ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY)
   : null;
-const PHOTO_BUCKET = "villa-photos";
 </script>
 </head>
 <body>
-<div class="wrap" id="app"><div class="loading">Ачааллаж байна...</div></div>
+
+<!-- Login Screen -->
+<div id="login-screen" class="login-overlay">
+  <div class="login-box">
+    <h2>Нэвтрэх</h2>
+    <p style="font-size: 0.85rem; color: var(--ink-soft);">Пин кодоо оруулна уу</p>
+    <input type="password" id="pin-input" placeholder="****" maxlength="8">
+    <button class="btn btn-primary" style="width: 100%;" onclick="checkPin()">Нэвтрэх</button>
+  </div>
+</div>
+
+<div class="wrap" id="app" style="display: none;"><div class="loading">Дата синк хийж байна...</div></div>
 
 <script>
+// НЭВТРЭХ НУУЦ ҮГ (Эндээс сольж болно)
+const APP_PIN = "1234"; 
+
 let ROOM_TYPES = ["Унтлагын", "Зочны", "Гадна", "Угаалгын", "Гал тогоо"];
-const REPAIR_TAB_ID = "__repairs__";
-const STATUS_OPTIONS = ["Гэмтэлгүй байгаа", "Бага зэрэг гэмтэлтэй", "Эвдэрсэн", "Гэмтэлтэй", "Дутуу", "Засвар хийх шаардлагатай"];
-const TOTAL_VILLAS = 31;
-const DATA_KEY = "villa-inventory-data-v1";
-const ROOMTYPES_KEY = "villa-room-types-v1";
-const SEED_DATA = {"10": {"rooms": {"Унтлагын": [{"name": "king size ор", "count": 1, "status": "Гэмтэлгүй байгаа"}, {"name": "Ханын булангын  шкав 2 хаалгатай", "count": 1, "status": "Гэмтэлгүй байгаа"}, {"name": "Модон тумба тус бүр мөөөн гэрэлтэй", "count": 4, "status": "Гэмтэлгүй байгаа"}, {"name": "Гоо сайхны ком", "count": 1, "status": "Гэмтэлгүй байгаа"}, {"name": "Хөшиг Саарал", "count": 2, "status": "Гэмтэлгүй байгаа"}, {"name": "Чүүл", "count": 2, "status": "Гэмтэлгүй байгаа"}, {"name": "Хөшиг эргүүлдэг", "count": 3, "status": "Гэмтэлгүй байгаа"}, {"name": "Давхар ор", "count": 1, "status": "Гэмтэлгүй байгаа"}, {"name": "Шатан тавиур", "count": 1, "status": "Гэмтэлгүй байгаа"}, {"name": "Дугуй хивс", "count": 1, "status": "Гэмтэлгүй байгаа"}], "Зочны": [{"name": "Ажлын ширээ", "count": 1, "status": "Гэмтэлгүй байгаа"}, {"name": "Ажлын сандал", "count": 1, "status": "Гэмтэлгүй байгаа"}, {"name": "Гал тогооны ком", "count": 1, "status": "Гэмтэлгүй байгаа"}, {"name": "Хоолны ширээ", "count": 1, "status": "Гэмтэлгүй байгаа"}, {"name": "Арьсан сандал", "count": 4, "status": "Гэмтэлгүй байгаа"}, {"name": "Саарал 5 нь дэртэй буйдан", "count": 1, "status": "Гэмтэлгүй байгаа"}, {"name": "Хөшиг эргүүлдэг", "count": 2, "status": "Гэмтэлгүй байгаа"}, {"name": "Тавиур", "count": 1, "status": "Гэмтэлгүй байгаа"}, {"name": "Coffe table", "count": 1, "status": "Гэмтэлгүй байгаа"}, {"name": "Босоо толь", "count": 1, "status": "Гэмтэлгүй байгаа"}, {"name": "Чүүл", "count": 4, "status": "Гэмтэлгүй байгаа"}, {"name": "Хөшиг Orange", "count": 6, "status": "Гэмтэлгүй байгаа"}, {"name": "Чүүл", "count": 4, "status": "Гэмтэлгүй байгаа"}, {"name": "Хувцасны өлгүүр", "count": 1, "status": "Гэмтэлгүй байгаа"}, {"name": "Гутлын сандал саарал", "count": 1, "status": "Гэмтэлгүй байгаа"}, {"name": "Хөл амраагчтай сандал хар арьсан", "count": 1, "status": "Гэмтэлгүй байгаа"}, {"name": "Навчин ширээ", "count": 1, "status": "Гэмтэлгүй байгаа"}, {"name": "Босоо гэрэл", "count": 1, "status": "Гэмтэлгүй байгаа"}], "Гадна": [{"name": "2 хүний буйдан", "count": 1, "status": "Гэмтэлгүй байгаа"}, {"name": "1 хүний буйдан", "count": 2, "status": "Гэмтэлгүй байгаа"}, {"name": "Хөл амраагчтай сандал", "count": 1, "status": "Гэмтэлгүй байгаа"}, {"name": "Ширээ шилэн", "count": 1, "status": "Гэмтэлгүй байгаа"}], "Угаалгын": [{"name": "Модон тавиур", "count": 1, "status": "Гэмтэлгүй байгаа"}, {"name": "Tenne  гар угаалтуурын ком Асдаг гэрэлтэй", "count": 1, "status": "Гэмтэлгүй байгаа"}, {"name": "Хөшиг эргүүлдэг", "count": 1, "status": "Гэмтэлгүй байгаа"}, {"name": "Угаалгын машин", "count": 1, "status": "Гэмтэлгүй байгаа"}, {"name": "Dyson сэнс-1 Хувцас хатаагч-1, Хувцас сагс-1", "count": 3, "status": "Гэмтэлгүй байгаа"}, {"name": "Holder", "count": 1, "status": "Гэмтэлгүй байгаа"}]}, "repairNotes": "[Унтлагын өрөө] Том орны зүүн талын шука цонхны бариул хаагдахгүй эвдэрсэн\n[Унтлагын өрөө] Давхар орны хажуугийн жижиг цонхны доор эмульс хууларсан\n[Унтлагын өрөө] Унтлагын өрөөний хана дагуу силкон салсан\n[Унтлагын өрөө] Цонх тойрсон заадас үүссэн\n[Угаалгын өрөө] Шүршүүрийн толгой солих\n[Угаалгын өрөө] Шүршүүрийн холигч солих силкон шинэчлэх\n[Угаалгын өрөө] Цонхны силкон хууларсан\n[Угаалгын өрөө] Цонхны хажуу тал хууларсан\n[Угаалгын өрөө] Гар угаалтуур доод талын силкон хийх"}, "9": {"rooms": {"Унтлагын": [{"name": "King size ор", "count": 1, "status": "Гэмтэлгүй байгаа"}, {"name": "Ханын булангын  шкаф 2 хаалгатай", "count": 1, "status": "Гэмтэлгүй байгаа"}, {"name": "Модон тумба", "count": 2, "status": "Бага зэрэг гэмтэлтэй"}, {"name": "Гоо сайхны ком", "count": 1, "status": "Гэмтэлгүй байгаа"}, {"name": "Хөшиг Саарал", "count": 2, "status": "Гэмтэлгүй байгаа"}, {"name": "Чүүл", "count": 2, "status": "Гэмтэлгүй байгаа"}, {"name": "Хөшиг эргүүлдэг", "count": 3, "status": "Гэмтэлгүй байгаа"}, {"name": "Давхар ор", "count": 1, "status": "Гэмтэлгүй байгаа"}, {"name": "Шатан тавиур", "count": 1, "status": "Гэмтэлгүй байгаа"}, {"name": "Мөөгөн гэрэл", "count": 2, "status": "Гэмтэлгүй байгаа"}, {"name": "Хогын сав", "count": 1, "status": "Гэмтэлгүй байгаа"}, {"name": "Дугуй хивс", "count": 1, "status": "Гэмтэлгүй байгаа"}], "Угаалгын": [{"name": "Модон тавиур", "count": 1, "status": "Гэмтэлгүй байгаа"}, {"name": "Tenne  гар угаалтуурын ком Асдаг гэрэлтэй", "count": 1, "status": "Гэмтэлгүй байгаа"}, {"name": "Хөшиг эргүүлдэг", "count": 1, "status": "Гэмтэлгүй байгаа"}, {"name": "Угаалгын машин", "count": 1, "status": "Гэмтэлгүй байгаа"}, {"name": "Dyson сэнс-1 Хувцас хатаагч-1, Хувцас сагс-1", "count": 3, "status": "Гэмтэлгүй байгаа"}], "Гал тогоо": [{"name": "Халбага", "count": 4, "status": "Гэмтэлгүй байгаа"}, {"name": "Сэрээ", "count": 4, "status": "Гэмтэлгүй байгаа"}, {"name": "Хутга", "count": 4, "status": "Гэмтэлгүй байгаа"}, {"name": "Савх", "count": 4, "status": "Гэмтэлгүй байгаа"}, {"name": "Хайч", "count": 1, "status": "Гэмтэлгүй байгаа"}, {"name": "Дарс онгойлгогч", "count": 1, "status": "Гэмтэлгүй байгаа"}, {"name": "Модон хутгуур", "count": 3, "status": "Гэмтэлгүй байгаа"}, {"name": "Төмөр хутгуур", "count": 1, "status": "Гэмтэлгүй байгаа"}, {"name": "Кофе аяга хос /жижиг халбага/ 4 ком", "count": 1, "status": "Гэмтэлгүй байгаа"}, {"name": "Усны сткан", "count": 4, "status": "Гэмтэлгүй байгаа"}, {"name": "Цайны аяга", "count": 4, "status": "Гэмтэлгүй байгаа"}, {"name": "Дарсны хундага", "count": 4, "status": "Гэмтэлгүй байгаа"}, {"name": "Шампайн хундага", "count": 1, "status": "Гэмтэлгүй байгаа"}, {"name": "Хоолны аяга", "count": 4, "status": "Гэмтэлгүй байгаа"}, {"name": "Амтлагч сав", "count": 2, "status": "Гэмтэлгүй байгаа"}, {"name": "Том таваг", "count": 4, "status": "Гэмтэлгүй байгаа"}, {"name": "Жижиг таваг", "count": 4, "status": "Гэмтэлгүй байгаа"}, {"name": "Хоолны сав /том/", "count": 1, "status": "Гэмтэлгүй байгаа"}, {"name": "Хайруулын таваг /том/", "count": 1, "status": "Гэмтэлгүй байгаа"}, {"name": "Хайруулын таваг /жижиг /", "count": 1, "status": "Гэмтэлгүй байгаа"}, {"name": "Салад хутгадаг төмөр сав", "count": 1, "status": "Гэмтэлгүй байгаа"}, {"name": "Жижиг сав /тагтай/", "count": 1, "status": "Гэмтэлгүй байгаа"}, {"name": "Жижиг сав /таггүй/", "count": 1, "status": "Гэмтэлгүй байгаа"}, {"name": "Жигнүүр", "count": 1, "status": "Гэмтэлгүй байгаа"}, {"name": "Будаа агшаагч", "count": 1, "status": "Гэмтэлгүй байгаа"}, {"name": "Лааны дэнлүү", "count": 2, "status": "Гэмтэлгүй байгаа"}, {"name": "Аяга таваг хатаагч", "count": 1, "status": "Гэмтэлгүй байгаа"}], "Зочны": [{"name": "Ажлын ширээ", "count": 1, "status": "Гэмтэлгүй байгаа"}, {"name": "Ажлын сандал", "count": 1, "status": "Гэмтэлгүй байгаа"}, {"name": "Гал тогооны ком", "count": 1, "status": "Гэмтэлгүй байгаа"}, {"name": "Хоолны ширээ", "count": 1, "status": "Гэмтэлгүй байгаа"}, {"name": "Арьсан сандал", "count": 4, "status": "Гэмтэлгүй байгаа"}, {"name": "Саарал 5 нь дэртэй буйдан", "count": 1, "status": "Гэмтэлгүй байгаа"}, {"name": "Хөшиг эргүүлдэг", "count": 2, "status": "Бага зэрэг гэмтэлтэй"}, {"name": "Тавиур", "count": 1, "status": "Гэмтэлгүй байгаа"}, {"name": "Coffe table", "count": 1, "status": "Гэмтэлгүй байгаа"}, {"name": "Босоо толь", "count": 1, "status": "Гэмтэлгүй байгаа"}, {"name": "Чүүл", "count": 4, "status": "Гэмтэлгүй байгаа"}, {"name": "Хөшиг Orange", "count": 6, "status": "Гэмтэлгүй байгаа"}, {"name": "Хувцасны өлгүүр", "count": 1, "status": "Гэмтэлгүй байгаа"}, {"name": "Гутлын сандал саарал", "count": 1, "status": "Гэмтэлгүй байгаа"}, {"name": "Чүүл", "count": 4, "status": "Гэмтэлгүй байгаа"}, {"name": "Хөл амраагчтай сандал хар арьсан", "count": 1, "status": "Гэмтэлгүй байгаа"}, {"name": "Навчин ширээ", "count": 1, "status": "Гэмтэлгүй байгаа"}, {"name": "Босоо гэрэл", "count": 1, "status": "Гэмтэлгүй байгаа"}], "Гадна": [{"name": "2 хүний буйдан", "count": 1, "status": "Гэмтэлгүй байгаа"}, {"name": "1 хүний буйдан", "count": 2, "status": "Гэмтэлгүй байгаа"}, {"name": "Хөл амраагчтай сандал", "count": 1, "status": "Гэмтэлгүй байгаа"}, {"name": "Ширээ шилэн", "count": 1, "status": "Гэмтэлгүй байгаа"}]}, "repairNotes": "[1. Унтлагын өрөө] Гэрлийн унтраалгын хажуу обой хуурсан\n[3. Зочны өрөө] Разетканы хажуу талын обой хуурсан\n[3. Зочны өрөө] Хөшиг тогтоох обой наах\n[3. Зочны өрөө] Хананд цууралт үүссэн\n[Гадна] Гална үүдны хэсэгт зэврэлт үүссэн\nШороог цэвэрлэх\nГадна гэрлийн наалт салсан"}}
-;
+const DATA_KEY = "villa-inventory-data-v2";
+const VILLA_LIST_KEY = "villa-list-v2";
 
 let state = {
+  villas: Array.from({length: 31}, (_, i) => String(i + 1)), // Анхны 1-31 вилла
   selectedVilla: null,
   activeRoom: ROOM_TYPES[0],
   data: {},
   loaded: false,
-  saveTimeout: null,
-  storageAvailable: true,
-  storageBackend: null, // 'supabase' | 'claude' | 'local' | null
-  saveStatus: 'idle', // 'idle' | 'saving' | 'saved' | 'error'
-  photoModal: null,
-  view: 'main', // 'main' | 'report'
-  uploadingIds: new Set(), // tracks "n:room:id:kind" while a photo upload is in flight
+  saveStatus: 'saved',
+  view: 'main'
 };
+
+function checkPin() {
+  const input = document.getElementById('pin-input').value;
+  if(input === APP_PIN) {
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('app').style.display = 'block';
+    loadData();
+  } else {
+    alert("Нэвтрэх пин код буруу байна!");
+  }
+}
 
 function emptyVilla(){
   const rooms = {};
-  const repairs = {};
-  ROOM_TYPES.forEach(r => { rooms[r] = []; repairs[r] = []; });
-  return { rooms, repairs, generalNotes: "" };
+  ROOM_TYPES.forEach(r => { rooms[r] = []; });
+  return { rooms };
 }
 
-function ensureVilla(n){
-  if(!state.data[n]) state.data[n] = emptyVilla();
+function ensureVilla(id){
+  if(!state.data[id]) state.data[id] = emptyVilla();
   ROOM_TYPES.forEach(r => {
-    if(!state.data[n].rooms[r]) state.data[n].rooms[r] = [];
-    if(!state.data[n].repairs) state.data[n].repairs = {};
-    if(!state.data[n].repairs[r]) state.data[n].repairs[r] = [];
+    if(!state.data[id].rooms[r]) state.data[id].rooms[r] = [];
   });
-  if(typeof state.data[n].generalNotes !== 'string') state.data[n].generalNotes = "";
-  return state.data[n];
+  return state.data[id];
 }
 
 function uid(){ return Math.random().toString(36).slice(2,9); }
 
-// Migrates the old single free-text "repairNotes" field (with lines like
-// "[Room name] description") into per-room repair checklists. Lines whose
-// bracket label doesn't match a known room fall back into generalNotes.
-function migrateLegacyRepairNotes(v){
-  if(typeof v.repairNotes === 'string' && v.repairNotes.trim() !== ''){
-    const lines = v.repairNotes.split('\n').map(l => l.trim()).filter(l => l !== '');
-    lines.forEach(line => {
-      const m = line.match(/^\[(.*?)\]\s*(.*)$/);
-      const room = m ? ROOM_TYPES.find(rt => m[1].includes(rt)) : null;
-      const text = m ? m[2] : line;
-      if(room){
-        v.repairs[room].push({id: uid(), text, done:false});
-      } else {
-        v.generalNotes = (v.generalNotes ? v.generalNotes + '\n' : '') + line;
-      }
-    });
-  }
-  delete v.repairNotes;
-}
-
-function normalizeData(data){
-  Object.keys(data).forEach(n => {
-    const v = data[n];
-    if(!v.rooms) v.rooms = {};
-    if(!v.repairs) v.repairs = {};
-    if(typeof v.generalNotes !== 'string') v.generalNotes = "";
-    ROOM_TYPES.forEach(r => {
-      if(!v.rooms[r]) v.rooms[r] = [];
-      if(!v.repairs[r]) v.repairs[r] = [];
-      v.rooms[r].forEach(item => {
-        if(!item.id) item.id = uid();
-        if(item.count === undefined || item.count === null) item.count = 1;
-        if(!item.status) item.status = "Гэмтэлгүй байгаа";
-        if(item.photo === undefined) item.photo = null;
-      });
-      v.repairs[r].forEach(rp => {
-        if(!rp.id) rp.id = uid();
-        if(typeof rp.text !== 'string') rp.text = "";
-        if(typeof rp.done !== 'boolean') rp.done = false;
-        if(rp.photo === undefined) rp.photo = null;
-      });
-    });
-    migrateLegacyRepairNotes(v);
-  });
-  return data;
-}
-
-// ---------- Storage backend: Supabase (shared, any device) with local fallback ----------
-
-async function supabaseGetKey(key){
-  const { data, error } = await supabase.from('villa_store').select('value').eq('key', key).maybeSingle();
-  if(error) throw error;
-  return data ? data.value : null;
-}
-
-async function supabaseSetKey(key, value){
-  const { error } = await supabase.from('villa_store').upsert({ key, value, updated_at: new Date().toISOString() });
-  if(error) throw error;
-}
-
 async function loadData(){
-  let loadedFromStorage = false;
-
-  // 1) Prefer Supabase — a real shared backend that works from any device, for anyone.
   if(supabase){
     try{
-      const [dataVal, roomVal] = await Promise.all([
-        supabaseGetKey(DATA_KEY),
-        supabaseGetKey(ROOMTYPES_KEY),
-      ]);
-      if(Array.isArray(roomVal) && roomVal.length){
-        ROOM_TYPES.length = 0;
-        ROOM_TYPES.push(...roomVal);
-      }
-      if(dataVal){
-        state.data = normalizeData(dataVal);
-        loadedFromStorage = true;
-      }
-      state.storageBackend = 'supabase';
-    }catch(e){
-      console.error("Supabase холболтод алдаа гарлаа, орон нутгийн хадгалалт руу шилжиж байна:", e);
-    }
-  }
+      // Виллануудын жагсаалт авах
+      const { data: vList } = await supabase.from('villa_store').select('value').eq('key', VILLA_LIST_KEY).maybeSingle();
+      if(vList && vList.value) state.villas = vList.value;
 
-  // 2) Claude.ai artifact storage, when running inside claude.ai and Supabase isn't set up.
-  if(!state.storageBackend && window.storage && typeof window.storage.get === 'function'){
-    try{
-      const res = await window.storage.get(DATA_KEY, true);
-      if(res && res.value){
-        state.data = normalizeData(JSON.parse(res.value));
-        loadedFromStorage = true;
-      }
-      state.storageBackend = 'claude';
-    }catch(e){
-      state.storageBackend = 'claude';
-    }
-  }
+      // Тооллогын дата авах
+      const { data } = await supabase.from('villa_store').select('value').eq('key', DATA_KEY).maybeSingle();
+      if(data && data.value) state.data = data.value;
 
-  // 3) Plain browser localStorage — last resort, only persists on this device.
-  if(!state.storageBackend){
-    try{
-      const testKey = "__storage_test__";
-      window.localStorage.setItem(testKey, "1");
-      window.localStorage.removeItem(testKey);
-      state.storageBackend = 'local';
-      const raw = window.localStorage.getItem(DATA_KEY);
-      const rawRooms = window.localStorage.getItem(ROOMTYPES_KEY);
-      if(rawRooms){
-        const parsedRooms = JSON.parse(rawRooms);
-        if(Array.isArray(parsedRooms) && parsedRooms.length){
-          ROOM_TYPES.length = 0;
-          ROOM_TYPES.push(...parsedRooms);
-        }
-      }
-      if(raw){
-        state.data = normalizeData(JSON.parse(raw));
-        loadedFromStorage = true;
-      }
-    }catch(e){
-      state.storageBackend = null;
-      state.storageAvailable = false;
-    }
-  }
+      // Real-time listener
+      supabase.channel('public:villa_store')
+        .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'villa_store' }, payload => {
+          if(payload.new && payload.new.key === DATA_KEY){
+            state.data = payload.new.value;
+            render();
+          }
+          if(payload.new && payload.new.key === VILLA_LIST_KEY){
+            state.villas = payload.new.value;
+            render();
+          }
+        }).subscribe();
 
-  if(!loadedFromStorage){
-    state.data = normalizeData(JSON.parse(JSON.stringify(SEED_DATA)));
-    saveData();
+    }catch(e){ console.error("Cloud load error:", e); }
   }
   state.loaded = true;
   render();
 }
 
-function scheduleSave(){
-  state.saveStatus = 'saving';
-  clearTimeout(state.saveTimeout);
-  state.saveTimeout = setTimeout(saveData, 500);
-  renderSaveStatusOnly();
-}
-
 async function saveData(){
-  if(!state.storageAvailable){ return; }
+  if(!supabase) return;
+  state.saveStatus = 'saving';
+  renderSaveStatus();
   try{
-    if(state.storageBackend === 'supabase'){
-      await supabaseSetKey(DATA_KEY, state.data);
-    } else if(state.storageBackend === 'claude' && window.storage && typeof window.storage.set === 'function'){
-      await window.storage.set(DATA_KEY, JSON.stringify(state.data), true);
-    } else if(state.storageBackend === 'local'){
-      window.localStorage.setItem(DATA_KEY, JSON.stringify(state.data));
-    } else {
-      throw new Error('no storage backend available');
-    }
+    await supabase.from('villa_store').upsert({ key: DATA_KEY, value: state.data });
+    await supabase.from('villa_store').upsert({ key: VILLA_LIST_KEY, value: state.villas });
     state.saveStatus = 'saved';
   }catch(e){
-    console.error("Хадгалахад алдаа гарлаа", e);
     state.saveStatus = 'error';
   }
-  renderSaveStatusOnly();
+  renderSaveStatus();
 }
 
-async function saveRoomTypes(){
-  try{
-    if(state.storageBackend === 'supabase'){
-      await supabaseSetKey(ROOMTYPES_KEY, ROOM_TYPES);
-    } else if(state.storageBackend === 'local'){
-      window.localStorage.setItem(ROOMTYPES_KEY, JSON.stringify(ROOM_TYPES));
+function renderSaveStatus(){
+  const el = document.getElementById('save-status');
+  if(!el) return;
+  el.textContent = state.saveStatus === 'saving' ? '☁️ Хадгалж байна...' : '✓ Хадгалагдсан (Cloud)';
+}
+
+function addVillaPrompt(){
+  const name = prompt("Шинэ Вилла эсвэл Байшингийн нэр/дугаарыг оруулна уу (Жишээ нь: 32 эсвэл VIP-1):");
+  if(name && name.trim()){
+    const trimmed = name.trim();
+    if(state.villas.includes(trimmed)){
+      alert("Ийм вилла аль хэдийн байна!");
+      return;
     }
-  }catch(e){
-    console.error("Өрөөний жагсаалт хадгалахад алдаа гарлаа", e);
+    state.villas.push(trimmed);
+    ensureVilla(trimmed);
+    saveData();
+    render();
   }
 }
 
-function saveStatusText(){
-  return state.saveStatus === 'saving' ? 'Хадгалж байна…'
-    : state.saveStatus === 'saved' ? '\u2713 Хадгалагдсан'
-    : state.saveStatus === 'error' ? '\u26A0 Хадгалагдсангүй'
-    : '';
+function deleteVilla(id){
+  if(confirm(`Та ${id} дугаартай виллаг устгахдаа итгэлтэй байна уу?`)){
+    state.villas = state.villas.filter(v => v !== id);
+    delete state.data[id];
+    if(state.selectedVilla === id) state.selectedVilla = null;
+    saveData();
+    render();
+  }
 }
 
-function renderSaveStatusOnly(){
-  const el = document.getElementById('save-status');
-  if(!el) return;
-  el.className = 'save-status save-status-' + state.saveStatus;
-  el.textContent = saveStatusText();
-}
-
-function storageBackendLabel(){
-  if(state.storageBackend === 'supabase') return '\u2601\uFE0F Бүх төхөөрөмжөөс харагдана';
-  if(state.storageBackend === 'local') return 'Энэ төхөөрөмж дээр хадгалагдана';
-  if(state.storageBackend === 'claude') return 'Claude.ai artifact хэлбэрээр хадгалагдана';
-  return '';
-}
-
-function villaIssueCount(n){
-  const v = state.data[n];
+function villaIssueCount(id){
+  const v = state.data[id];
   if(!v) return 0;
   let count = 0;
   ROOM_TYPES.forEach(r => {
@@ -401,67 +277,19 @@ function villaIssueCount(n){
   return count;
 }
 
-function villaHasData(n){
-  const v = state.data[n];
-  if(!v) return false;
-  return ROOM_TYPES.some(r => (v.rooms[r]||[]).length > 0)
-    || ROOM_TYPES.some(r => (v.repairs && v.repairs[r] || []).length > 0)
-    || (v.generalNotes && v.generalNotes.trim() !== "");
-}
-
-function villaRepairPendingCount(n){
-  const v = state.data[n];
-  if(!v || !v.repairs) return 0;
-  let count = 0;
-  ROOM_TYPES.forEach(r => (v.repairs[r]||[]).forEach(rp => { if(!rp.done) count++; }));
-  return count;
-}
-
-function totalRepairsPending(){
-  let t = 0;
-  for(let i=1;i<=TOTAL_VILLAS;i++) t += villaRepairPendingCount(i);
-  return t;
-}
-
-function statusClass(status){
-  if(status === "Гэмтэлгүй байгаа") return "status-good-bg";
-  if(!status) return "status-empty-bg";
-  if(status === "Бага зэрэг гэмтэлтэй") return "status-warn-bg";
-  return "status-bad-bg";
-}
-
-function escapeHtml(str){
-  if(!str) return "";
-  return String(str).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
-}
-
-function totalIssuesAll(){
-  let t = 0;
-  for(let i=1;i<=TOTAL_VILLAS;i++) t += villaIssueCount(i);
-  return t;
-}
-
 function render(){
   const app = document.getElementById('app');
-  if(!state.loaded){
-    app.innerHTML = `<div class="loading">Ачааллаж байна...</div>`;
-    return;
-  }
-
-  const backendLabel = storageBackendLabel();
+  if(!state.loaded) return;
 
   let html = `
     <header>
       <div class="header-row">
         <h1>Villa Тооллого</h1>
-        <div class="totalcount">${TOTAL_VILLAS} вилла &middot; нийт ${totalIssuesAll()} эвдэрсэн зүйл &middot; ${totalRepairsPending()} хийгдэх засвар</div>
+        <button class="btn btn-ghost" onclick="location.reload()">Гарах</button>
       </div>
-      <p class="subtitle">Вилла сонгож, тавилгын байдал болон засварын ажлыг харна уу.</p>
-      <div style="margin-top:10px; display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
-        <button class="btn btn-ghost" onclick="toggleReport()">${state.view==='report' ? '&larr; Буцах' : '\u{1F4CB} Нэгтгэлийн тайлан харах'}</button>
-        <span id="save-status" class="save-status save-status-${state.saveStatus}">${saveStatusText()}</span>
-        ${backendLabel ? `<span class="storage-note">${backendLabel}</span>` : ''}
-        ${!state.storageAvailable ? '<span class="storage-note storage-warn">Хадгалах боломжгүй байна — өөрчлөлт хадгалагдахгүй</span>' : ''}
+      <div style="margin-top:8px; display:flex; align-items:center; justify-content:space-between;">
+        <button class="btn btn-ghost" onclick="toggleReport()">${state.view==='report' ? '← Буцах' : '📋 Нэгтгэлийн тайлан'}</button>
+        <span id="save-status" style="font-size:0.8rem; font-weight:bold; color:#2E7D32;">✓ Хадгалагдсан (Cloud)</span>
       </div>
     </header>
   `;
@@ -472,537 +300,121 @@ function render(){
     return;
   }
 
+  // Виллануудын grid
   html += `<div class="tilegrid">`;
-
-  for(let i=1;i<=TOTAL_VILLAS;i++){
-    const issues = villaIssueCount(i);
-    const hasData = villaHasData(i);
-    let dotColor = 'transparent';
-    if(hasData){ dotColor = issues > 0 ? 'var(--red)' : 'var(--teal)'; }
-    const sel = state.selectedVilla === i ? 'selected' : '';
+  state.villas.forEach(id => {
+    const issues = villaIssueCount(id);
+    const sel = state.selectedVilla === id ? 'selected' : '';
     html += `
-      <div class="tile ${sel}" onclick="selectVilla(${i})">
-        <div class="dot" style="background:${dotColor}"></div>
-        <span class="num">${i}</span>
+      <div class="tile ${sel}" onclick="selectVilla('${id}')">
+        ${issues > 0 ? `<div class="dot" style="background:var(--red)"></div>` : ''}
+        <span class="num">${id}</span>
         ${issues > 0 ? `<span class="badge">${issues}</span>` : ''}
       </div>
     `;
-  }
+  });
+  // Шинэ вилла нэмэх товч
+  html += `<div class="tile add-villa-tile" onclick="addVillaPrompt()" title="Шинэ байшин нэмэх">+</div>`;
   html += `</div>`;
 
   if(state.selectedVilla){
     html += renderVillaDetail(state.selectedVilla);
   } else {
-    html += `<div class="card empty">Дээрээс Villa дугаар сонгоно уу.</div>`;
+    html += `<div class="card empty">Дээрээс засах Villa дугаараа сонгоно уу.</div>`;
   }
-
-  html += renderPhotoModal();
 
   app.innerHTML = html;
 }
 
-function toggleReport(){
-  state.view = state.view === 'report' ? 'main' : 'report';
-  render();
-}
+function selectVilla(id){ state.selectedVilla = id; state.activeRoom = ROOM_TYPES[0]; ensureVilla(id); render(); }
+function setActiveRoom(r){ state.activeRoom = r; render(); }
+function toggleReport(){ state.view = state.view === 'report' ? 'main' : 'report'; render(); }
 
-function printReport(){
-  window.print();
+function renderVillaDetail(id){
+  ensureVilla(id);
+  const v = state.data[id];
+
+  let html = `
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+      <h3>Villa ${id} сонгогдсон</h3>
+      <button class="btn btn-ghost" style="color:var(--red);" onclick="deleteVilla('${id}')">Вилла устгах</button>
+    </div>
+    <div class="room-tabs">
+  `;
+  ROOM_TYPES.forEach(r => {
+    const active = state.activeRoom === r ? 'active' : '';
+    html += `<div class="room-tab ${active}" onclick="setActiveRoom('${r}')">${r}</div>`;
+  });
+  html += `</div>`;
+
+  const items = v.rooms[state.activeRoom] || [];
+  html += `<div class="card room-panel"><table><thead><tr>
+    <th class="col-num">№</th><th>Тавилга</th><th class="col-count">Тоо</th><th class="col-status">Төлөв</th><th class="col-del"></th>
+  </tr></thead><tbody>`;
+
+  items.forEach((item, idx) => {
+    html += `
+      <tr>
+        <td class="col-num">${idx+1}</td>
+        <td><input class="item-input" type="text" value="${item.name||''}" placeholder="Тавилгын нэр" onchange="updateItem('${id}','${state.activeRoom}','${item.id}','name',this.value)"></td>
+        <td class="col-count"><input class="item-input count-input" type="number" value="${item.count||1}" onchange="updateItem('${id}','${state.activeRoom}','${item.id}','count',this.value)"></td>
+        <td class="col-status">
+          <select class="status-select ${statusClass(item.status)}" onchange="updateItem('${id}','${state.activeRoom}','${item.id}','status',this.value)">
+            ${["Гэмтэлгүй байгаа", "Бага зэрэг гэмтэлтэй", "Эвдэрсэн", "Гэмтэлтэй", "Дутуу"].map(s => `<option value="${s}" ${item.status===s?'selected':''}>${s}</option>`).join('')}
+          </select>
+        </td>
+        <td class="col-del"><button class="btn-danger" onclick="deleteItem('${id}','${state.activeRoom}','${item.id}')">&times;</button></td>
+      </tr>
+    `;
+  });
+  html += `</tbody></table>`;
+  html += `<button class="btn btn-ghost" style="margin-top:12px;" onclick="addItem('${id}','${state.activeRoom}')">+ Тавилга нэмэх</button></div>`;
+
+  return html;
 }
 
 function renderReport(){
-  const furnitureRows = [];
-  for(let i=1;i<=TOTAL_VILLAS;i++){
-    const v = state.data[i];
-    if(!v) continue;
+  let html = `<div class="card"><h2>Гэмтэлтэй тавилгын нэгтгэл</h2></div><div class="card"><table><thead><tr><th>Villa</th><th>Өрөө</th><th>Тавилга</th><th>Тоо</th><th>Төлөв</th></tr></thead><tbody>`;
+  state.villas.forEach(id => {
+    const v = state.data[id];
+    if(!v) return;
     ROOM_TYPES.forEach(r => {
       (v.rooms[r]||[]).forEach(item => {
         if(item.status && item.status !== "Гэмтэлгүй байгаа"){
-          furnitureRows.push({villa:i, room:r, ...item});
+          html += `<tr><td><b>${id}</b></td><td>${r}</td><td>${item.name}</td><td>${item.count}</td><td><span class="status-chip ${statusClass(item.status)}">${item.status}</span></td></tr>`;
         }
       });
     });
-  }
-
-  const repairRows = [];
-  for(let i=1;i<=TOTAL_VILLAS;i++){
-    const v = state.data[i];
-    if(!v || !v.repairs) continue;
-    ROOM_TYPES.forEach(r => {
-      (v.repairs[r]||[]).forEach(rp => {
-        repairRows.push({villa:i, room:r, ...rp});
-      });
-    });
-  }
-  const pendingRepairs = repairRows.filter(r => !r.done);
-  const doneRepairs = repairRows.filter(r => r.done);
-
-  const generalRows = [];
-  for(let i=1;i<=TOTAL_VILLAS;i++){
-    const v = state.data[i];
-    if(v && v.generalNotes && v.generalNotes.trim() !== ""){
-      generalRows.push({villa:i, text:v.generalNotes});
-    }
-  }
-
-  let html = `
-    <div class="card" id="report-root">
-      <div class="issues-card-head">
-        <h2>Нэгтгэлийн тайлан</h2>
-        <button class="btn btn-ghost no-print" onclick="printReport()">&#128424; Хэвлэх</button>
-      </div>
-      <p class="subtitle" style="margin:0;">Бүх villa-н гэмтэлтэй тавилга болон хийгдэх засварын нэгтгэл.</p>
-    </div>
-  `;
-
-  html += `
-    <div class="card">
-      <div class="section-title" style="display:flex; align-items:center; gap:8px;">
-        &#128295; Гэмтсэн тавилгын нэгтгэл
-        <span class="badge-pill ${furnitureRows.length ? 'status-bad-bg' : 'status-good-bg'}">${furnitureRows.length}</span>
-      </div>
-  `;
-  if(furnitureRows.length === 0){
-    html += `<p class="empty-note" style="padding:8px 0; text-align:left;">Гэмтэлтэй тавилга бүртгэгдээгүй байна.</p>`;
-  } else {
-    html += `
-      <table>
-        <thead>
-          <tr><th class="col-num">Villa</th><th>Өрөө</th><th>Тавилга</th><th class="col-count">Тоо</th><th class="col-status">Төлөв</th></tr>
-        </thead>
-        <tbody>
-    `;
-    furnitureRows.forEach(fr => {
-      html += `
-        <tr>
-          <td class="col-num">${fr.villa}</td>
-          <td>${escapeHtml(fr.room)}</td>
-          <td>${escapeHtml(fr.name) || '(нэргүй)'}</td>
-          <td class="col-count">&times;${fr.count||1}</td>
-          <td class="col-status"><span class="status-chip ${statusClass(fr.status)}">${escapeHtml(fr.status)}</span></td>
-        </tr>
-      `;
-    });
-    html += `</tbody></table>`;
-  }
-  html += `</div>`;
-
-  html += `
-    <div class="card">
-      <div class="section-title" style="display:flex; align-items:center; gap:8px; color:var(--amber);">
-        &#128736;&#65039; Хийгдэх засварын нэгтгэл
-        <span class="badge-pill ${pendingRepairs.length ? 'status-warn-bg' : 'status-good-bg'}">${pendingRepairs.length}</span>
-      </div>
-  `;
-  if(pendingRepairs.length === 0){
-    html += `<p class="empty-note" style="padding:8px 0; text-align:left;">Хийгдэх засвар алга.</p>`;
-  } else {
-    pendingRepairs.forEach(rp => {
-      html += `
-        <div class="issue-row">
-          <div><span class="issue-room">Villa ${rp.villa} &middot; ${escapeHtml(rp.room)}</span>${escapeHtml(rp.text) || '(тайлбаргүй)'}</div>
-        </div>
-      `;
-    });
-  }
-  if(doneRepairs.length){
-    html += `<p style="margin:14px 0 4px; font-size:0.85rem; color:var(--ink-soft); font-weight:600;">Дууссан засвар (${doneRepairs.length})</p>`;
-    doneRepairs.forEach(rp => {
-      html += `
-        <div class="issue-row">
-          <div><span class="issue-room">Villa ${rp.villa} &middot; ${escapeHtml(rp.room)}</span><span style="text-decoration:line-through; color:var(--ink-soft);">${escapeHtml(rp.text) || '(тайлбаргүй)'}</span></div>
-        </div>
-      `;
-    });
-  }
-  html += `</div>`;
-
-  if(generalRows.length){
-    html += `
-      <div class="card">
-        <div class="section-title">&#128221; Бусад тэмдэглэл</div>
-    `;
-    generalRows.forEach(gr => {
-      html += `
-        <div class="issue-row" style="display:block; padding:10px 0;">
-          <span class="issue-room">Villa ${gr.villa}</span>
-          <div style="white-space:pre-wrap; margin-top:4px;">${escapeHtml(gr.text)}</div>
-        </div>
-      `;
-    });
-    html += `</div>`;
-  }
-
+  });
+  html += `</tbody></table></div>`;
   return html;
 }
 
-function getPhotoTarget(n, room, id, kind){
-  const v = state.data[n];
-  if(!v) return null;
-  const list = kind === 'repair' ? (v.repairs && v.repairs[room]) : (v.rooms && v.rooms[room]);
-  if(!list) return null;
-  return list.find(i => i.id === id) || null;
+function statusClass(status){
+  if(status === "Гэмтэлгүй байгаа") return "status-good-bg";
+  if(status === "Бага зэрэг гэмтэлтэй") return "status-warn-bg";
+  return "status-bad-bg";
 }
 
-function renderPhotoModal(){
-  if(!state.photoModal) return '';
-  const {n, room, id, kind} = state.photoModal;
-  const item = getPhotoTarget(n, room, id, kind);
-  if(!item || !item.photo) return '';
-  return `
-    <div class="modal-overlay" onclick="closePhotoModal()">
-      <div class="modal-box" onclick="event.stopPropagation()">
-        <img class="modal-img" src="${item.photo}">
-        <div class="modal-actions">
-          <button class="btn btn-ghost" onclick="document.getElementById('photoinput-${kind}-${item.id}').click()">Солих</button>
-          <button class="btn btn-danger-outline" onclick="deletePhoto(${n},'${room}','${item.id}','${kind}')">Устгах</button>
-          <button class="btn btn-ghost" onclick="closePhotoModal()">Хаах</button>
-        </div>
-      </div>
-    </div>
-  `;
-}
-
-function renderVillaDetail(n){
-  ensureVilla(n);
-  const v = state.data[n];
-  const issues = [];
-  ROOM_TYPES.forEach(r => {
-    (v.rooms[r]||[]).forEach(item => {
-      if(item.status && item.status !== "Гэмтэлгүй байгаа"){
-        issues.push({room:r, ...item});
-      }
-    });
-  });
-
-  let html = ``;
-
-  html += `
-    <div class="card" style="border-color:${issues.length ? '#E3B7AB' : 'var(--border)'}">
-      <div class="issues-card-head">
-        <h2>Villa ${n} — Засвар шаардлагатай зүйлс</h2>
-        <span class="badge-pill ${issues.length ? 'status-bad-bg' : 'status-good-bg'}">${issues.length} зүйл</span>
-      </div>
-  `;
-  if(issues.length === 0){
-    html += `<p class="empty-note" style="padding:0;text-align:left;">Одоогоор бүртгэгдсэн гэмтэлтэй тавилга алга.</p>`;
-  } else {
-    issues.forEach(it => {
-      html += `
-        <div class="issue-row">
-          <div><span class="issue-room">${it.room}</span>${escapeHtml(it.name) || '(нэргүй)'} <span class="issue-count">&times;${it.count||1}</span></div>
-          <span class="status-chip ${statusClass(it.status)}">${escapeHtml(it.status)}</span>
-        </div>
-      `;
-    });
-  }
-  html += `</div>`;
-
-  const repairPendingTotal = ROOM_TYPES.reduce((sum, r) => sum + (v.repairs[r]||[]).filter(rp => !rp.done).length, 0);
-
-  html += `<div class="room-tabs">`;
-  ROOM_TYPES.forEach(r => {
-    const active = state.activeRoom === r ? 'active' : '';
-    html += `<div class="room-tab ${active}" onclick="setActiveRoom('${r}')">${escapeHtml(r)}</div>`;
-  });
-  html += `<div class="room-tab room-tab-add" onclick="promptAddRoom()" title="Шинэ өрөө нэмэх">+ Өрөө</div>`;
-  html += `
-    <div class="room-tab room-tab-repair ${state.activeRoom===REPAIR_TAB_ID?'active':''}" onclick="setActiveRoom('${REPAIR_TAB_ID}')">
-      🛠️ Засвар${repairPendingTotal > 0 ? ` <span class="tab-count">${repairPendingTotal}</span>` : ''}
-    </div>
-  `;
-  html += `</div>`;
-
-  if(state.activeRoom === REPAIR_TAB_ID){
-    html += renderRepairPanel(n, v);
-  } else {
-    const items = v.rooms[state.activeRoom] || [];
-    html += `<div class="card room-panel">`;
-    html += `
-      <table>
-        <thead>
-          <tr>
-            <th class="col-num">№</th>
-            <th class="col-photo"></th>
-            <th>Тавилга</th>
-            <th class="col-count">Ширхэг</th>
-            <th class="col-status">Төлөв</th>
-            <th class="col-del"></th>
-          </tr>
-        </thead>
-        <tbody>
-    `;
-    items.forEach((item, idx) => {
-      const uploadKey = n + ':' + state.activeRoom + ':' + item.id + ':item';
-      const isUploading = state.uploadingIds.has(uploadKey);
-      html += `
-        <tr>
-          <td class="col-num">${idx+1}</td>
-          <td class="col-photo">
-            ${isUploading
-              ? `<div class="photo-thumb uploading">...</div>`
-              : item.photo
-                ? `<img class="photo-thumb" src="${item.photo}" onclick="openPhotoModal(${n},'${state.activeRoom}','${item.id}','item')" title="Зураг харах">`
-                : `<div class="photo-thumb empty" onclick="document.getElementById('photoinput-item-${item.id}').click()" title="Зураг нэмэх">+</div>`
-            }
-            <input type="file" accept="image/*" capture="environment" id="photoinput-item-${item.id}" style="display:none" onchange="handlePhotoUpload(event, ${n}, '${state.activeRoom}', '${item.id}', 'item')">
-          </td>
-          <td><input class="item-input" type="text" value="${escapeHtml(item.name)}" placeholder="Тавилгын нэр" oninput="updateItem(${n},'${state.activeRoom}','${item.id}','name',this.value)"></td>
-          <td class="col-count"><input class="item-input count-input" type="number" min="0" value="${item.count}" oninput="updateItem(${n},'${state.activeRoom}','${item.id}','count',this.value)"></td>
-          <td class="col-status">
-            <select class="status-select ${statusClass(item.status)}" onchange="updateItem(${n},'${state.activeRoom}','${item.id}','status',this.value)">
-              ${STATUS_OPTIONS.map(s => `<option value="${s}" ${item.status===s?'selected':''}>${s}</option>`).join('')}
-            </select>
-          </td>
-          <td class="col-del"><button class="btn-danger" onclick="deleteItem(${n},'${state.activeRoom}','${item.id}')" title="Устгах">&times;</button></td>
-        </tr>
-      `;
-    });
-    html += `</tbody></table>`;
-    if(items.length === 0){
-      html += `<p class="empty-note">Энэ өрөөнд тавилга бүртгэгдээгүй байна.</p>`;
-    }
-    html += `<button class="btn btn-ghost" style="margin-top:12px;" onclick="addItem(${n},'${state.activeRoom}')">+ Тавилга нэмэх</button>`;
-    html += `</div>`;
-  }
-
-  return html;
-}
-
-function renderRepairPanel(n, v){
-  let html = `<div class="card room-panel" style="border-color:#E4C49B; background:#FFFDF9;">`;
-  ROOM_TYPES.forEach((r, idx) => {
-    const repairs = v.repairs[r] || [];
-    html += `
-      <div style="${idx > 0 ? 'margin-top:22px; padding-top:18px; border-top:1px solid var(--border);' : ''}">
-        <div class="section-title" style="display:flex; align-items:center; gap:8px; color:var(--amber); font-size:0.95rem;">
-          ${escapeHtml(r)}
-        </div>
-    `;
-    if(repairs.length === 0){
-      html += `<p class="empty-note" style="padding:6px 0; text-align:left;">Энэ өрөөнд бүртгэгдсэн засвар алга.</p>`;
-    } else {
-      repairs.forEach(rp => {
-        const uploadKey = n + ':' + r + ':' + rp.id + ':repair';
-        const isUploading = state.uploadingIds.has(uploadKey);
-        html += `
-          <div class="issue-row" style="align-items:flex-start; gap:8px;">
-            <input type="checkbox" ${rp.done?'checked':''} style="margin-top:9px; flex-shrink:0;" title="Хийгдсэн" onchange="updateRepair(${n},'${r}','${rp.id}','done',this.checked)">
-            ${isUploading
-              ? `<div class="photo-thumb uploading" style="flex-shrink:0;">...</div>`
-              : rp.photo
-                ? `<img class="photo-thumb" src="${rp.photo}" style="flex-shrink:0;" onclick="openPhotoModal(${n},'${r}','${rp.id}','repair')" title="Зураг харах">`
-                : `<div class="photo-thumb empty" style="flex-shrink:0;" onclick="document.getElementById('photoinput-repair-${rp.id}').click()" title="Зураг нэмэх">+</div>`
-            }
-            <input type="file" accept="image/*" capture="environment" id="photoinput-repair-${rp.id}" style="display:none" onchange="handlePhotoUpload(event, ${n}, '${r}', '${rp.id}', 'repair')">
-            <input class="item-input" type="text" style="flex:1; ${rp.done?'text-decoration:line-through;color:var(--ink-soft);':''}" value="${escapeHtml(rp.text)}" placeholder="Жишээ: Шүршүүрийн хоолой засах" oninput="updateRepair(${n},'${r}','${rp.id}','text',this.value)">
-            <button class="btn-danger" onclick="deleteRepair(${n},'${r}','${rp.id}')" title="Устгах">&times;</button>
-          </div>
-        `;
-      });
-    }
-    html += `<button class="btn btn-ghost" style="margin-top:10px;" onclick="addRepair(${n},'${r}')">+ Засвар нэмэх</button>`;
-    html += `</div>`;
-  });
-  html += `</div>`;
-
-  html += `
-    <div class="card">
-      <div class="section-title" style="display:flex; align-items:center; gap:8px;">
-        📝 Бусад тэмдэглэл
-      </div>
-      <p style="margin:0 0 10px; font-size:0.85rem; color:var(--ink-soft);">Тодорхой өрөөнд хамааралгүй ерөнхий тэмдэглэл.</p>
-      <textarea rows="3" placeholder="Жишээ: Гадна үүдний хэсэгт зэврэлт үүссэн..." oninput="updateGeneralNotes(${n}, this.value)">${escapeHtml(v.generalNotes)}</textarea>
-    </div>
-  `;
-
-  return html;
-}
-
-function selectVilla(n){
-  state.selectedVilla = n;
-  state.activeRoom = ROOM_TYPES[0];
-  ensureVilla(n);
+function addItem(id, room){
+  ensureVilla(id);
+  state.data[id].rooms[room].push({id: uid(), name:"", count:1, status:"Гэмтэлгүй байгаа"});
+  saveData();
   render();
 }
 
-function setActiveRoom(r){
-  state.activeRoom = r;
-  render();
-}
-
-function promptAddRoom(){
-  const name = prompt('Шинэ өрөөний нэрийг оруулна уу (жишээ: Хоёр дахь унтлагын өрөө):');
-  if(name === null) return;
-  const trimmed = name.trim();
-  if(!trimmed) return;
-  if(ROOM_TYPES.includes(trimmed)){
-    alert('Ийм нэртэй өрөө аль хэдийн байна.');
-    return;
-  }
-  ROOM_TYPES.push(trimmed);
-  saveRoomTypes();
-  Object.keys(state.data).forEach(key => {
-    ensureVilla(Number(key));
-  });
-  state.activeRoom = trimmed;
-  render();
-}
-
-function addItem(n, room){
-  ensureVilla(n);
-  state.data[n].rooms[room].push({id: uid(), name:"", count:1, status:"Гэмтэлгүй байгаа"});
-  scheduleSave();
-  render();
-}
-
-function updateItem(n, room, id, field, value){
-  const items = state.data[n].rooms[room];
-  const item = items.find(i => i.id === id);
+function updateItem(id, room, itemId, field, value){
+  const item = state.data[id].rooms[room].find(i => i.id === itemId);
   if(!item) return;
-  if(field === 'count') value = Math.max(0, parseInt(value)||0);
   item[field] = value;
-  scheduleSave();
-  if(field === 'status'){ render(); }
+  saveData();
 }
 
-function deleteItem(n, room, id){
-  state.data[n].rooms[room] = state.data[n].rooms[room].filter(i => i.id !== id);
-  scheduleSave();
+function deleteItem(id, room, itemId){
+  state.data[id].rooms[room] = state.data[id].rooms[room].filter(i => i.id !== itemId);
+  saveData();
   render();
 }
-
-function resizeImageToBlob(file, maxDim, quality){
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const img = new Image();
-      img.onload = () => {
-        let w = img.width, h = img.height;
-        if(w > h){ if(w > maxDim){ h = Math.round(h * maxDim / w); w = maxDim; } }
-        else { if(h > maxDim){ w = Math.round(w * maxDim / h); h = maxDim; } }
-        const canvas = document.createElement('canvas');
-        canvas.width = w; canvas.height = h;
-        const ctx = canvas.getContext('2d');
-        ctx.drawImage(img, 0, 0, w, h);
-        canvas.toBlob((blob) => {
-          if(blob) resolve(blob);
-          else reject(new Error('Зураг хөрвүүлэхэд алдаа гарлаа'));
-        }, 'image/jpeg', quality);
-      };
-      img.onerror = () => reject(new Error('Зураг ачаалахад алдаа гарлаа'));
-      img.src = e.target.result;
-    };
-    reader.onerror = () => reject(new Error('Файл уншихад алдаа гарлаа'));
-    reader.readAsDataURL(file);
-  });
-}
-
-function blobToDataUrl(blob){
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result);
-    reader.onerror = () => reject(new Error('Файл уншихад алдаа гарлаа'));
-    reader.readAsDataURL(blob);
-  });
-}
-
-async function uploadPhoto(blob, n, room, id, kind){
-  if(supabase && state.storageBackend === 'supabase'){
-    const path = `villa-${n}/${kind}-${id}.jpg`;
-    const { error } = await supabase.storage.from(PHOTO_BUCKET).upload(path, blob, {
-      contentType: 'image/jpeg',
-      upsert: true,
-    });
-    if(error) throw error;
-    const { data } = supabase.storage.from(PHOTO_BUCKET).getPublicUrl(path);
-    return data.publicUrl + '?v=' + Date.now();
-  }
-  return await blobToDataUrl(blob);
-}
-
-async function removePhotoFromStorage(n, room, id, kind){
-  if(supabase && state.storageBackend === 'supabase'){
-    const path = `villa-${n}/${kind}-${id}.jpg`;
-    try{ await supabase.storage.from(PHOTO_BUCKET).remove([path]); }
-    catch(e){ console.error('Зураг устгахад алдаа гарлаа', e); }
-  }
-}
-
-async function handlePhotoUpload(event, n, room, id, kind){
-  kind = kind || 'item';
-  const file = event.target.files && event.target.files[0];
-  event.target.value = '';
-  if(!file) return;
-  const uploadKey = n + ':' + room + ':' + id + ':' + kind;
-  state.uploadingIds.add(uploadKey);
-  render();
-  try{
-    const blob = await resizeImageToBlob(file, 640, 0.7);
-    const url = await uploadPhoto(blob, n, room, id, kind);
-    ensureVilla(n);
-    const item = getPhotoTarget(n, room, id, kind);
-    if(item){
-      item.photo = url;
-      scheduleSave();
-    }
-  }catch(e){
-    console.error(e);
-    alert('Зураг оруулахад алдаа гарлаа. Дахин оролдоно уу.');
-  }
-  state.uploadingIds.delete(uploadKey);
-  render();
-}
-
-function openPhotoModal(n, room, id, kind){
-  state.photoModal = {n, room, id, kind: kind || 'item'};
-  render();
-}
-
-function closePhotoModal(){
-  state.photoModal = null;
-  render();
-}
-
-function deletePhoto(n, room, id, kind){
-  kind = kind || 'item';
-  const item = getPhotoTarget(n, room, id, kind);
-  if(item){ item.photo = null; }
-  scheduleSave();
-  state.photoModal = null;
-  render();
-  removePhotoFromStorage(n, room, id, kind);
-}
-
-function updateGeneralNotes(n, value){
-  ensureVilla(n);
-  state.data[n].generalNotes = value;
-  scheduleSave();
-}
-
-function addRepair(n, room){
-  ensureVilla(n);
-  state.data[n].repairs[room].push({id: uid(), text:"", done:false, photo:null});
-  scheduleSave();
-  render();
-}
-
-function updateRepair(n, room, id, field, value){
-  const repairs = state.data[n].repairs[room];
-  const rp = repairs.find(r => r.id === id);
-  if(!rp) return;
-  rp[field] = value;
-  scheduleSave();
-  if(field === 'done'){ render(); }
-}
-
-function deleteRepair(n, room, id){
-  state.data[n].repairs[room] = state.data[n].repairs[room].filter(r => r.id !== id);
-  scheduleSave();
-  render();
-}
-
-loadData();
 </script>
 </body>
 </html>
