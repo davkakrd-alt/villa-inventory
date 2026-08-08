@@ -37,23 +37,26 @@
   }
   .login-box {
     background: var(--base-raised); border: 1px solid var(--border);
-    padding: 30px; border-radius: 12px; text-align: center; max-width: 320px; width: 90%;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    padding: 30px; border-radius: 12px; text-align: center; max-width: 340px; width: 90%;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.08);
   }
+  .login-box h2 { font-size: 1.5rem; margin-bottom: 6px; }
   .login-box input {
     width: 100%; padding: 12px; margin: 16px 0; text-align: center;
-    font-size: 1.2rem; letter-spacing: 4px; border: 1px solid var(--border); border-radius: 8px;
+    font-size: 1.3rem; letter-spacing: 6px; border: 1px solid var(--border); border-radius: 8px;
+    background: #fff;
   }
+  .login-box input:focus { outline: none; border-color: var(--teal); }
 
   header{margin-bottom:20px;}
-  .header-row{display:flex; align-items:baseline; justify-content:space-between; flex-wrap:wrap; gap:8px;}
+  .header-row{display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;}
   h1{font-size:1.6rem; font-weight:600;}
   .totalcount{font-family:'Courier New',monospace; font-size:0.85rem; color:var(--ink-soft);}
   .subtitle{color:var(--ink-soft); margin-top:4px; font-size:0.85rem;}
 
   .tilegrid{
     display:grid;
-    grid-template-columns:repeat(auto-fill, minmax(62px,1fr));
+    grid-template-columns:repeat(auto-fill, minmax(64px,1fr));
     gap:8px;
     margin-bottom:24px;
   }
@@ -74,21 +77,20 @@
   .tile:active{transform:scale(0.96);}
   .tile.selected{border-color:var(--teal); box-shadow:0 0 0 2px var(--teal);}
   .tile .num{font-family:'Courier New',monospace; font-weight:700; font-size:0.95rem;}
-  .tile .badge{font-family:'Courier New',monospace; font-size:0.65rem; color:var(--red); font-weight:700;}
+  .tile .badge{font-family:'Courier New',monospace; font-size:0.65rem; color:var(--red); font-weight:700; margin-top:2px;}
   .tile .dot{width:7px;height:7px;border-radius:50%;position:absolute;top:6px;right:6px;}
 
   .add-villa-tile {
     border: 1.5px dashed var(--teal);
     color: var(--teal);
     font-weight: bold;
-    font-size: 1.2rem;
+    font-size: 1.4rem;
+    background: transparent;
   }
+  .add-villa-tile:hover { background: rgba(43,110,94,0.05); }
 
   .card{background:var(--base-raised); border:1px solid var(--border); border-radius:12px; padding:16px; margin-bottom:16px;}
   .card.empty{text-align:center; color:var(--ink-soft); padding:36px 16px;}
-
-  .issues-card-head{display:flex; align-items:center; justify-content:space-between; margin-bottom:10px;}
-  .issues-card-head h2{font-size:1.1rem; font-weight:600;}
 
   .status-good-bg{background:#E7F0EC; color:var(--teal-deep); border:1px solid #BFDACE;}
   .status-warn-bg{background:var(--amber-bg); color:var(--amber); border:1px solid #E4C49B;}
@@ -105,9 +107,9 @@
   tbody tr{border-top:1px solid var(--border);}
   tbody td{padding:8px 2px;}
   .col-num{width:28px; font-family:'Courier New',monospace; color:var(--ink-soft);}
-  .col-count{width:65px;}
+  .col-count{width:70px;}
   .col-status{width:180px;}
-  .col-del{width:32px; text-align:right;}
+  .col-del{width:36px; text-align:right;}
 
   input.item-input{background:transparent; border:1px solid transparent; border-radius:6px; padding:6px 8px; width:100%; font-size:0.88rem; font-family:inherit;}
   input.item-input:hover, input.item-input:focus{border-color:var(--teal); background:#fff; outline:none;}
@@ -136,17 +138,17 @@ const supabase = (window.supabase && typeof window.supabase.createClient === 'fu
 <!-- Login Screen -->
 <div id="login-screen" class="login-overlay">
   <div class="login-box">
-    <h2>Нэвтрэх</h2>
-    <p style="font-size: 0.85rem; color: var(--ink-soft);">Пин кодоо оруулна уу</p>
-    <input type="password" id="pin-input" placeholder="****" maxlength="8">
-    <button class="btn btn-primary" style="width: 100%;" onclick="checkPin()">Нэвтрэх</button>
+    <h2>Вилла Тооллого</h2>
+    <p style="font-size: 0.85rem; color: var(--ink-soft); margin-top:4px;">Пин кодоо оруулж нэвтэрнэ үү</p>
+    <input type="password" id="pin-input" placeholder="****" maxlength="8" onkeyup="if(event.key==='Enter') checkPin()">
+    <button class="btn btn-primary" style="width: 100%; padding: 10px;" onclick="checkPin()">Нэвтрэх</button>
   </div>
 </div>
 
 <div class="wrap" id="app" style="display: none;"><div class="loading">Дата синк хийж байна...</div></div>
 
 <script>
-// НЭВТРЭХ НУУЦ ҮГ (Эндээс сольж болно)
+// НЭВТРЭХ НУУЦ ҮГ (Хүссэн кодоороо сольж болно)
 const APP_PIN = "1234"; 
 
 let ROOM_TYPES = ["Унтлагын", "Зочны", "Гадна", "Угаалгын", "Гал тогоо"];
@@ -154,7 +156,7 @@ const DATA_KEY = "villa-inventory-data-v2";
 const VILLA_LIST_KEY = "villa-list-v2";
 
 let state = {
-  villas: Array.from({length: 31}, (_, i) => String(i + 1)), // Анхны 1-31 вилла
+  villas: Array.from({length: 31}, (_, i) => String(i + 1)), // 1-31 вилла
   selectedVilla: null,
   activeRoom: ROOM_TYPES[0],
   data: {},
@@ -277,6 +279,12 @@ function villaIssueCount(id){
   return count;
 }
 
+function totalIssuesAll(){
+  let t = 0;
+  state.villas.forEach(id => { t += villaIssueCount(id); });
+  return t;
+}
+
 function render(){
   const app = document.getElementById('app');
   if(!state.loaded) return;
@@ -284,10 +292,13 @@ function render(){
   let html = `
     <header>
       <div class="header-row">
-        <h1>Villa Тооллого</h1>
+        <div>
+          <h1>Villa Тооллого</h1>
+          <div class="totalcount">${state.villas.length} байшин &middot; ${totalIssuesAll()} гэмтэл бүртгэгдсэн</div>
+        </div>
         <button class="btn btn-ghost" onclick="location.reload()">Гарах</button>
       </div>
-      <div style="margin-top:8px; display:flex; align-items:center; justify-content:space-between;">
+      <div style="margin-top:12px; display:flex; align-items:center; justify-content:space-between;">
         <button class="btn btn-ghost" onclick="toggleReport()">${state.view==='report' ? '← Буцах' : '📋 Нэгтгэлийн тайлан'}</button>
         <span id="save-status" style="font-size:0.8rem; font-weight:bold; color:#2E7D32;">✓ Хадгалагдсан (Cloud)</span>
       </div>
@@ -375,17 +386,22 @@ function renderVillaDetail(id){
 
 function renderReport(){
   let html = `<div class="card"><h2>Гэмтэлтэй тавилгын нэгтгэл</h2></div><div class="card"><table><thead><tr><th>Villa</th><th>Өрөө</th><th>Тавилга</th><th>Тоо</th><th>Төлөв</th></tr></thead><tbody>`;
+  let hasIssues = false;
   state.villas.forEach(id => {
     const v = state.data[id];
     if(!v) return;
     ROOM_TYPES.forEach(r => {
       (v.rooms[r]||[]).forEach(item => {
         if(item.status && item.status !== "Гэмтэлгүй байгаа"){
+          hasIssues = true;
           html += `<tr><td><b>${id}</b></td><td>${r}</td><td>${item.name}</td><td>${item.count}</td><td><span class="status-chip ${statusClass(item.status)}">${item.status}</span></td></tr>`;
         }
       });
     });
   });
+  if(!hasIssues){
+    html += `<tr><td colspan="5" style="text-align:center; padding:20px; color:var(--ink-soft);">Одоогоор гэмтэлтэй тавилга бүртгэгдээгүй байна.</td></tr>`;
+  }
   html += `</tbody></table></div>`;
   return html;
 }
