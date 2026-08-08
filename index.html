@@ -150,7 +150,9 @@
 <script>
 const SUPABASE_URL = "https://tmkiuebrkmfnpmuyxxwd.supabase.co";
 const SUPABASE_KEY = "sb_publishable_5JQga2wW_08AqkZTaEf_Q_C1mtz87X";
-const supabase = (window.supabase && typeof window.supabase.createClient === 'function')
+
+// Хувьсагчийг dbClient болгон нэрлэв (Сангийн нэртэй давхардахаас сэргийлсэн)
+const dbClient = (window.supabase && typeof window.supabase.createClient === 'function')
   ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY)
   : null;
 </script>
@@ -237,15 +239,15 @@ function ensureVilla(id){
 function uid(){ return Math.random().toString(36).slice(2,9); }
 
 async function loadData(){
-  if(supabase){
+  if(dbClient){
     try{
-      const { data: vList } = await supabase.from('villa_store').select('value').eq('key', VILLA_LIST_KEY).maybeSingle();
+      const { data: vList } = await dbClient.from('villa_store').select('value').eq('key', VILLA_LIST_KEY).maybeSingle();
       if(vList && vList.value) state.villas = vList.value;
 
-      const { data } = await supabase.from('villa_store').select('value').eq('key', DATA_KEY).maybeSingle();
+      const { data } = await dbClient.from('villa_store').select('value').eq('key', DATA_KEY).maybeSingle();
       if(data && data.value) state.data = data.value;
 
-      supabase.channel('public:villa_store')
+      dbClient.channel('public:villa_store')
         .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'villa_store' }, payload => {
           if(payload.new && payload.new.key === DATA_KEY){ state.data = payload.new.value; render(); }
           if(payload.new && payload.new.key === VILLA_LIST_KEY){ state.villas = payload.new.value; render(); }
@@ -257,12 +259,12 @@ async function loadData(){
 }
 
 async function saveData(){
-  if(!supabase) return;
+  if(!dbClient) return;
   state.saveStatus = 'saving';
   renderSaveStatus();
   try{
-    const { error: err1 } = await supabase.from('villa_store').upsert({ key: DATA_KEY, value: state.data }, { onConflict: 'key' });
-    const { error: err2 } = await supabase.from('villa_store').upsert({ key: VILLA_LIST_KEY, value: state.villas }, { onConflict: 'key' });
+    const { error: err1 } = await dbClient.from('villa_store').upsert({ key: DATA_KEY, value: state.data }, { onConflict: 'key' });
+    const { error: err2 } = await dbClient.from('villa_store').upsert({ key: VILLA_LIST_KEY, value: state.villas }, { onConflict: 'key' });
     
     if(err1 || err2) {
       console.error("Save error:", err1, err2);
