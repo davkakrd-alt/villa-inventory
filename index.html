@@ -148,6 +148,7 @@
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
+// ✅ Үндсэн URL болон API Key
 const SUPABASE_URL = "https://tmkiuebrkmfnpmuyxxwd.supabase.co";
 const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRta2l1ZWJya21mbnBtdXl4eHdkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODYxNjY1MTgsImV4cCI6MjEwMTc0MjUxOH0.eT0Mm31Tdc2gv6tyPz2kUrVLXYyG1Opn3LNr3TeRsMM";
 
@@ -241,13 +242,11 @@ function ensureVilla(id){
 function uid(){ return Math.random().toString(36).slice(2,9); }
 
 async function loadData(){
-  // LocalStorage-аас эхэлж уншина
   const localVillas = localStorage.getItem(VILLA_LIST_KEY);
   const localData = localStorage.getItem(DATA_KEY);
   if(localVillas) state.villas = JSON.parse(localVillas);
   if(localData) state.data = JSON.parse(localData);
 
-  // Supabase-аас дата татаж шинэчилнэ
   if(dbClient){
     try{
       const { data: vList } = await dbClient.from('villa_store').select('value').eq('key', VILLA_LIST_KEY).maybeSingle();
@@ -274,7 +273,6 @@ async function loadData(){
 }
 
 async function saveData(){
-  // Локал дээр давхар хадгална
   localStorage.setItem(VILLA_LIST_KEY, JSON.stringify(state.villas));
   localStorage.setItem(DATA_KEY, JSON.stringify(state.data));
 
@@ -325,6 +323,7 @@ function triggerPhotoUpload(id, room, itemId){
   document.getElementById('global-file-input').click();
 }
 
+// ✅ Зургийг 400px, 0.4 чанартай болгож компресс хийх функц
 function handleFileSelected(input){
   if(!input.files || !input.files[0] || !state.uploadTarget) return;
   const file = input.files[0];
@@ -335,7 +334,7 @@ function handleFileSelected(input){
     img.src = e.target.result;
     img.onload = function(){
       const canvas = document.createElement('canvas');
-      const maxDim = 600;
+      const maxDim = 400; 
       let w = img.width;
       let h = img.height;
 
@@ -352,7 +351,7 @@ function handleFileSelected(input){
       const ctx = canvas.getContext('2d');
       ctx.drawImage(img, 0, 0, w, h);
 
-      const compressedUrl = canvas.toDataURL('image/jpeg', 0.6);
+      const compressedUrl = canvas.toDataURL('image/jpeg', 0.4);
 
       const { id, room, itemId } = state.uploadTarget;
       const item = state.data[id].rooms[room].find(i => i.id === itemId);
