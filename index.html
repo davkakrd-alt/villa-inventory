@@ -149,12 +149,14 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 const SUPABASE_URL = "https://tmkiuebrkmfnpmuyxxwd.supabase.co";
-const SUPABASE_KEY = "sb_publishable_5JQga2wW_08AqkZTaEf_Q_C1mtz87X";
+const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRta2l1ZWJya21mbnBtdXl4eHdkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODYxNjY1MTgsImV4cCI6MjEwMTc0MjUxOH0.eT0Mm31Tdc2gv6tyPz2kUrVLXYyG1Opn3LNr3TeRsMM";
 
-// Хувьсагчийг dbClient болгон нэрлэв (Сангийн нэртэй давхардахаас сэргийлсэн)
-const dbClient = (window.supabase && typeof window.supabase.createClient === 'function')
-  ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY)
-  : null;
+let dbClient = null;
+try {
+  if (window.supabase && typeof window.supabase.createClient === 'function') {
+    dbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+  }
+} catch(e) { console.error("Supabase init error:", e); }
 </script>
 </head>
 <body>
@@ -239,29 +241,47 @@ function ensureVilla(id){
 function uid(){ return Math.random().toString(36).slice(2,9); }
 
 async function loadData(){
+  // LocalStorage-аас эхэлж уншина
+  const localVillas = localStorage.getItem(VILLA_LIST_KEY);
+  const localData = localStorage.getItem(DATA_KEY);
+  if(localVillas) state.villas = JSON.parse(localVillas);
+  if(localData) state.data = JSON.parse(localData);
+
+  // Supabase-аас дата татаж шинэчилнэ
   if(dbClient){
     try{
       const { data: vList } = await dbClient.from('villa_store').select('value').eq('key', VILLA_LIST_KEY).maybeSingle();
-      if(vList && vList.value) state.villas = vList.value;
+      if(vList && vList.value) {
+        state.villas = vList.value;
+        localStorage.setItem(VILLA_LIST_KEY, JSON.stringify(vList.value));
+      }
 
       const { data } = await dbClient.from('villa_store').select('value').eq('key', DATA_KEY).maybeSingle();
-      if(data && data.value) state.data = data.value;
+      if(data && data.value) {
+        state.data = data.value;
+        localStorage.setItem(DATA_KEY, JSON.stringify(data.value));
+      }
 
       dbClient.channel('public:villa_store')
         .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'villa_store' }, payload => {
           if(payload.new && payload.new.key === DATA_KEY){ state.data = payload.new.value; render(); }
           if(payload.new && payload.new.key === VILLA_LIST_KEY){ state.villas = payload.new.value; render(); }
         }).subscribe();
-    }catch(e){ console.error(e); }
+    }catch(e){ console.error("Cloud load error:", e); }
   }
   state.loaded = true;
   render();
 }
 
 async function saveData(){
+  // Локал дээр давхар хадгална
+  localStorage.setItem(VILLA_LIST_KEY, JSON.stringify(state.villas));
+  localStorage.setItem(DATA_KEY, JSON.stringify(state.data));
+
   if(!dbClient) return;
   state.saveStatus = 'saving';
   renderSaveStatus();
+
   try{
     const { error: err1 } = await dbClient.from('villa_store').upsert({ key: DATA_KEY, value: state.data }, { onConflict: 'key' });
     const { error: err2 } = await dbClient.from('villa_store').upsert({ key: VILLA_LIST_KEY, value: state.villas }, { onConflict: 'key' });
@@ -292,7 +312,7 @@ function renderSaveStatus(){
     el.textContent = '✓ Хадгалагдсан (Cloud)';
     el.style.color = '#2E7D32';
   } else {
-    el.textContent = '❌ Хадгалахад алдаа гарлаа';
+    el.textContent = '⚠️ Серверт хадгалагдсангүй (Локал санах ойд хадгалагдсан)';
     el.style.color = '#A63F2B';
     el.style.cursor = 'pointer';
     el.title = "Дэлгэрэнгүй харах бол дарна уу";
@@ -637,29 +657,3 @@ function deleteItemProtected(id, room, itemId){
 </script>
 </body>
 </html>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script>
-const SUPABASE_URL = "https://tmkiuebrkmfnpmuyxxwd.supabase.co";
-
-// Зураг дээрх Legacy `anon public` түлхүүрийг энд орууллаа:
-const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRta2l1ZWJya21mbnBtdXl4eHdkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MDk4NTY0ODAsImV4cCI6MjAyNTQzMjQ4MH0.XXXXX"; // Copy хийж авсан түлхүүрээ бүтнээр нь энд арилгаж тавиарай
-
-let dbClient = null;
-try {
-  if (window.supabase && typeof window.supabase.createClient === 'function') {
-    dbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-  }
-} catch(e) { console.error("Supabase init error:", e); }
-</script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script>
-const SUPABASE_URL = "https://tmkiuebrkmfnpmuyxxwd.supabase.co";
-const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRta2l1ZWJya21mbnBtdXl4eHdkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODYxNjY1MTgsImV4cCI6MjEwMTc0MjUxOH0.eT0Mm31Tdc2gv6tyPz2kUrVLXYyG1Opn3LNr3TeRsMM";
-
-let dbClient = null;
-try {
-  if (window.supabase && typeof window.supabase.createClient === 'function') {
-    dbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-  }
-} catch(e) { console.error("Supabase init error:", e); }
-</script>
