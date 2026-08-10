@@ -148,6 +148,7 @@
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
+// ✅ Үндсэн URL болон API Key
 const SUPABASE_URL = "https://tmkiuebrkmfnpmuyxxwd.supabase.co";
 const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRta2l1ZWJya21mbnBtdXl4eHdkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODYxNjY1MTgsImV4cCI6MjEwMTc0MjUxOH0.eT0Mm31Tdc2gv6tyPz2kUrVLXYyG1Opn3LNr3TeRsMM";
 
@@ -181,11 +182,10 @@ try {
   </div>
 </div>
 
-<input type="file" id="global-file-input" accept="image/*" multiple style="display:none;" onchange="handleFileSelected(this)">
+<input type="file" id="global-file-input" accept="image/*" style="display:none;" onchange="handleFileSelected(this)">
 
 <script>
 const ADMIN_PIN = "1234"; 
-
 let ROOM_TYPES = ["Унтлагын", "Зочны", "Гадна", "Угаалгын", "Гал тогоо"];
 const REPAIR_TAB = "🛠️ Засвар";
 const DATA_KEY = "villa-inventory-data-v2";
@@ -249,20 +249,20 @@ async function loadData(){
 
   if(dbClient){
     try{
-      const { data: vList, error: errV } = await dbClient.from('villa_store').select('value').eq('key', VILLA_LIST_KEY).maybeSingle();
+      const { data: vList } = await dbClient.from('villa_store').select('value').eq('key', VILLA_LIST_KEY).maybeSingle();
       if(vList && vList.value) {
         state.villas = vList.value;
         localStorage.setItem(VILLA_LIST_KEY, JSON.stringify(vList.value));
       }
 
-      const { data, error: errD } = await dbClient.from('villa_store').select('value').eq('key', DATA_KEY).maybeSingle();
+      const { data } = await dbClient.from('villa_store').select('value').eq('key', DATA_KEY).maybeSingle();
       if(data && data.value) {
         state.data = data.value;
         localStorage.setItem(DATA_KEY, JSON.stringify(data.value));
       }
 
       dbClient.channel('public:villa_store')
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'villa_store' }, payload => {
+        .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'villa_store' }, payload => {
           if(payload.new && payload.new.key === DATA_KEY){ state.data = payload.new.value; render(); }
           if(payload.new && payload.new.key === VILLA_LIST_KEY){ state.villas = payload.new.value; render(); }
         }).subscribe();
@@ -281,12 +281,11 @@ async function saveData(){
   renderSaveStatus();
 
   try{
-    // Supabase RLS permission засаагүй бол энд error өгнө
     const { error: err1 } = await dbClient.from('villa_store').upsert({ key: DATA_KEY, value: state.data }, { onConflict: 'key' });
     const { error: err2 } = await dbClient.from('villa_store').upsert({ key: VILLA_LIST_KEY, value: state.villas }, { onConflict: 'key' });
     
     if(err1 || err2) {
-      console.error("Save error details:", err1, err2);
+      console.error("Save error:", err1, err2);
       state.saveStatus = 'error';
       state.lastErrorMsg = (err1 ? err1.message : '') + ' ' + (err2 ? err2.message : '');
     } else {
@@ -311,11 +310,11 @@ function renderSaveStatus(){
     el.textContent = '✓ Хадгалагдсан (Cloud)';
     el.style.color = '#2E7D32';
   } else {
-    el.textContent = '⚠️ Серверт хадгалагдсангүй (Локал ажиллаж байна)';
+    el.textContent = '⚠️ Серверт хадгалагдсангүй (Локал санах ойд хадгалагдсан)';
     el.style.color = '#A63F2B';
     el.style.cursor = 'pointer';
     el.title = "Дэлгэрэнгүй харах бол дарна уу";
-    el.onclick = () => alert("Алдаа: " + state.lastErrorMsg + "\n\nЗөвлөмж: Supabase Dashboard -> Table Editor -> villa_store таб руу орж RLS (Row Level Security)-ийг Disable хийх шаардлагатай.");
+    el.onclick = () => alert("Алдааны мэдээлэл: " + state.lastErrorMsg);
   }
 }
 
@@ -324,44 +323,12 @@ function triggerPhotoUpload(id, room, itemId){
   document.getElementById('global-file-input').click();
 }
 
+// ✅ Зургийг 400px, 0.4 чанартай болгож компресс хийх функц
 function handleFileSelected(input){
-  if(!input.files || input.files.length === 0 || !state.uploadTarget) return;
-  
-  const files = Array.from(input.files);
-  const { id, room, itemId } = state.uploadTarget;
-  
-  let processedCount = 0;
-  
-  files.forEach((file, index) => {
-    processImage(file, (compressedUrl) => {
-      if(index === 0) {
-        const item = state.data[id].rooms[room].find(i => i.id === itemId);
-        if(item) item.photo = compressedUrl;
-      } else {
-        const fileNameWithoutExt = file.name.substring(0, file.name.lastIndexOf('.')) || file.name;
-        state.data[id].rooms[room].push({
-          id: uid(),
-          name: fileNameWithoutExt,
-          count: 1,
-          status: "Гэмтэлгүй байгаа",
-          photo: compressedUrl,
-          isDone: false
-        });
-      }
-      
-      processedCount++;
-      if(processedCount === files.length) {
-        saveData();
-        render();
-      }
-    });
-  });
-  
-  input.value = "";
-}
-
-function processImage(file, callback) {
+  if(!input.files || !input.files[0] || !state.uploadTarget) return;
+  const file = input.files[0];
   const reader = new FileReader();
+
   reader.onload = function(e){
     const img = new Image();
     img.src = e.target.result;
@@ -384,7 +351,16 @@ function processImage(file, callback) {
       const ctx = canvas.getContext('2d');
       ctx.drawImage(img, 0, 0, w, h);
 
-      callback(canvas.toDataURL('image/jpeg', 0.4));
+      const compressedUrl = canvas.toDataURL('image/jpeg', 0.4);
+
+      const { id, room, itemId } = state.uploadTarget;
+      const item = state.data[id].rooms[room].find(i => i.id === itemId);
+      if(item){
+        item.photo = compressedUrl;
+        saveData();
+        render();
+      }
+      input.value = "";
     };
   };
   reader.readAsDataURL(file);
