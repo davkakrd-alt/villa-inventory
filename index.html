@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Villa Тооллого & Засвар & Түлхүүр</title>
+<title>Villa Тооллого & Засвар</title>
 <style>
   :root{
     --ink:#1E2420;
@@ -39,13 +39,13 @@
   }
   .login-box {
     background: var(--base-raised); border: 1px solid var(--border);
-    padding: 30px; border-radius: 12px; text-align: center; max-width: 360px; width: 90%;
+    padding: 30px; border-radius: 12px; text-align: center; max-width: 340px; width: 90%;
     box-shadow: 0 4px 16px rgba(0,0,0,0.08);
   }
   .login-box h2 { font-size: 1.5rem; margin-bottom: 6px; }
   .login-box input {
-    width: 100%; padding: 12px; margin: 12px 0; text-align: center;
-    font-size: 1.2rem; border: 1px solid var(--border); border-radius: 8px;
+    width: 100%; padding: 12px; margin: 16px 0; text-align: center;
+    font-size: 1.3rem; letter-spacing: 6px; border: 1px solid var(--border); border-radius: 8px;
     background: #fff;
   }
   .login-box input:focus { outline: none; border-color: var(--teal); }
@@ -101,7 +101,6 @@
   .room-tab{padding:10px 14px; border-radius:8px 8px 0 0; cursor:pointer; font-weight:600; font-size:0.85rem; color:var(--ink-soft); border:1px solid transparent;}
   .room-tab.active{background:var(--base-raised); border:1px solid var(--border); border-bottom:1px solid var(--base-raised); color:var(--ink); margin-bottom:-1px;}
   .room-tab.repair-tab{color:var(--amber);}
-  .room-tab.key-tab{color:var(--teal);}
 
   .room-panel{border-radius:0 0 12px 12px; margin-top:0; overflow-x:auto;}
   table{width:100%; border-collapse:collapse; font-size:0.88rem; min-width:580px;}
@@ -129,10 +128,10 @@
   .photo-thumb:hover{ border-color:var(--teal); }
 
   .modal-overlay{position:fixed; inset:0; background:rgba(0,0,0,0.7); display:flex; align-items:center; justify-content:center; z-index:3000; padding:16px;}
-  .modal-box{background:var(--base-raised); border-radius:12px; padding:20px; max-width:500px; width:90vw; max-height:90vh; overflow-y:auto; display:flex; flex-direction:column; gap:12px;}
-  .modal-img{max-width:80vw; max-height:70vh; border-radius:8px; object-fit:contain; align-self:center;}
+  .modal-box{background:var(--base-raised); border-radius:12px; padding:16px; max-width:90vw; max-height:90vh; display:flex; flex-direction:column; gap:12px; align-items:center;}
+  .modal-img{max-width:80vw; max-height:70vh; border-radius:8px; object-fit:contain;}
 
-  .btn{padding:8px 14px; border-radius:8px; font-weight:600; font-size:0.82rem; cursor:pointer; border:none; transition:opacity .12s; font-family:inherit; display:inline-flex; align-items:center; justify-content:center; gap:4px;}
+  .btn{padding:8px 14px; border-radius:8px; font-weight:600; font-size:0.82rem; cursor:pointer; border:none; transition:opacity .12s; font-family:inherit; display:inline-flex; align-items:center; justify-content:center;}
   .btn-primary{background:var(--teal); color:white;}
   .btn-ghost{background:transparent; color:var(--ink-soft); border:1px solid var(--border);}
   .btn-danger{background:transparent; color:var(--red); border:none; font-size:1.2rem; cursor:pointer; padding:4px 8px;}
@@ -149,6 +148,7 @@
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
+// ✅ Үндсэн URL болон API Key
 const SUPABASE_URL = "https://tmkiuebrkmfnpmuyxxwd.supabase.co";
 const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRta2l1ZWJya21mbnBtdXl4eHdkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODYxNjY1MTgsImV4cCI6MjEwMTc0MjUxOH0.eT0Mm31Tdc2gv6tyPz2kUrVLXYyG1Opn3LNr3TeRsMM";
 
@@ -166,9 +166,9 @@ try {
 <div id="login-screen" class="login-overlay">
   <div class="login-box">
     <h2>Villa Тооллого & Засвар</h2>
-    <p style="font-size: 0.85rem; color: var(--ink-soft); margin-top:4px;">ПИН кодоо оруулж нэвтэрнэ үү</p>
+    <p style="font-size: 0.85rem; color: var(--ink-soft); margin-top:4px;">Пин кодоо оруулж нэвтэрнэ үү</p>
     <input type="password" id="pin-input" placeholder="****" maxlength="8" onkeyup="if(event.key==='Enter') checkPin()">
-    <button class="btn btn-primary" style="width: 100%; padding: 12px;" onclick="checkPin()">Нэвтрэх</button>
+    <button class="btn btn-primary" style="width: 100%; padding: 10px;" onclick="checkPin()">Нэвтрэх</button>
   </div>
 </div>
 
@@ -176,90 +176,23 @@ try {
 
 <!-- Image Modal -->
 <div id="photo-modal" class="modal-overlay" style="display:none;">
-  <div class="modal-box" style="align-items:center;">
+  <div class="modal-box">
     <img id="modal-img-element" class="modal-img" src="" alt="Зураг">
     <button class="btn btn-ghost" onclick="closePhotoModal()">Хаах</button>
-  </div>
-</div>
-
-<!-- Change PIN Modal -->
-<div id="pin-modal" class="modal-overlay" style="display:none;">
-  <div class="modal-box">
-    <h3>🔑 ПИН Код Солих</h3>
-    <div>
-      <label style="font-size:0.8rem; font-weight:bold;">Одоогийн ПИН код:</label>
-      <input type="password" id="old-pin" class="item-input" style="border:1px solid var(--border); padding:8px;" placeholder="****">
-    </div>
-    <div>
-      <label style="font-size:0.8rem; font-weight:bold;">Шинэ ПИН код:</label>
-      <input type="password" id="new-pin" class="item-input" style="border:1px solid var(--border); padding:8px;" placeholder="****">
-    </div>
-    <div>
-      <label style="font-size:0.8rem; font-weight:bold;">Шинэ ПИН код (давтах):</label>
-      <input type="password" id="confirm-pin" class="item-input" style="border:1px solid var(--border); padding:8px;" placeholder="****">
-    </div>
-    <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:10px;">
-      <button class="btn btn-ghost" onclick="closePinModal()">Цуцлах</button>
-      <button class="btn btn-primary" onclick="saveNewPin()">Хадгалах</button>
-    </div>
-  </div>
-</div>
-
-<!-- Manage Users Modal (Admin Only) -->
-<div id="users-modal" class="modal-overlay" style="display:none;">
-  <div class="modal-box" style="max-width:600px;">
-    <h3>👥 Хэрэглэгчдийн удирдлага</h3>
-    <div style="max-height:250px; overflow-y:auto;">
-      <table style="min-width:100%;">
-        <thead>
-          <tr>
-            <th>Нэр</th>
-            <th>Эрх</th>
-            <th>ПИН Код</th>
-            <th></th>
-          </tr>
-        </thead>
-        <tbody id="users-table-body"></tbody>
-      </table>
-    </div>
-    <hr style="width:100%; border:0; border-top:1px solid var(--border);">
-    <h4>Шинэ хэрэглэгч нэмэх</h4>
-    <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:8px;">
-      <input type="text" id="new-user-name" placeholder="Хэрэглэгчийн нэр" class="item-input" style="border:1px solid var(--border); padding:6px;">
-      <input type="password" id="new-user-pin" placeholder="ПИН код" class="item-input" style="border:1px solid var(--border); padding:6px;" maxlength="8">
-      <select id="new-user-role" class="item-input" style="border:1px solid var(--border);">
-        <option value="staff">Ажилтан (Staff)</option>
-        <option value="admin">Админ (Admin)</option>
-      </select>
-    </div>
-    <div style="display:flex; justify-content:space-between; margin-top:12px;">
-      <button class="btn btn-ghost" onclick="closeUsersModal()">Хаах</button>
-      <button class="btn btn-primary" onclick="createNewUser()">+ Хэрэглэгч нэмэх</button>
-    </div>
   </div>
 </div>
 
 <input type="file" id="global-file-input" accept="image/*" style="display:none;" onchange="handleFileSelected(this)">
 
 <script>
+const ADMIN_PIN = "1234"; 
 let ROOM_TYPES = ["Унтлагын", "Зочны", "Гадна", "Угаалгын", "Гал тогоо"];
 const REPAIR_TAB = "🛠️ Засвар";
-const KEY_TAB = "🔑 Түлхүүр";
-
 const DATA_KEY = "villa-inventory-data-v2";
 const VILLA_LIST_KEY = "villa-list-v2";
-const USERS_KEY = "villa-users-list-v1";
-
-// Анхны хэрэглэгч
-const DEFAULT_USERS = [
-  { id: "usr_admin", name: "Админ", pin: "1234", role: "admin" },
-  { id: "usr_staff", name: "Ажилтан", pin: "0000", role: "staff" }
-];
 
 let state = {
   villas: Array.from({length: 31}, (_, i) => String(i + 1)),
-  users: DEFAULT_USERS,
-  currentUser: null,
   selectedVilla: null,
   activeRoom: ROOM_TYPES[0],
   data: {},
@@ -271,31 +204,22 @@ let state = {
 };
 
 function checkPin() {
-  const pin = document.getElementById('pin-input').value.trim();
-  const foundUser = state.users.find(u => u.pin === pin);
-  
-  if(foundUser) {
-    state.currentUser = foundUser;
+  const pin = document.getElementById('pin-input').value;
+  if(pin === ADMIN_PIN || pin === "0000") {
     document.getElementById('login-screen').style.display = 'none';
     document.getElementById('app').style.display = 'block';
-    document.getElementById('pin-input').value = "";
     loadData();
   } else {
-    alert("Нэвтрэх ПИН код буруу байна!");
+    alert("Нэвтрэх пин код буруу байна!");
   }
 }
 
 function verifyAdminPermission(actionName, callback) {
-  if (state.currentUser && state.currentUser.role === 'admin') {
-    callback();
-    return;
-  }
-  const inputPin = prompt(`"${actionName}" үйлдэл хийхэд АДМИН ПИН код шаардлагатай:`);
-  const adminUser = state.users.find(u => u.pin === inputPin && u.role === 'admin');
-  if(adminUser) {
+  const inputPin = prompt(`"${actionName}" үйлдэл хийхэд АДМИН нууц үг шаардлагатай:`);
+  if(inputPin === ADMIN_PIN) {
     callback();
   } else if(inputPin !== null) {
-    alert("Эрх хүрэлцэхгүй байна эсвэл ПИН код буруу байна! Зөвхөн админ хийх боломжтой.");
+    alert("Нууц үг буруу байна! Зөвхөн админ өөрчлөх эрхтэй.");
   }
 }
 
@@ -303,7 +227,6 @@ function emptyVilla(){
   const rooms = {};
   ROOM_TYPES.forEach(r => { rooms[r] = []; });
   rooms[REPAIR_TAB] = [];
-  rooms[KEY_TAB] = [];
   return { rooms };
 }
 
@@ -313,7 +236,6 @@ function ensureVilla(id){
     if(!state.data[id].rooms[r]) state.data[id].rooms[r] = [];
   });
   if(!state.data[id].rooms[REPAIR_TAB]) state.data[id].rooms[REPAIR_TAB] = [];
-  if(!state.data[id].rooms[KEY_TAB]) state.data[id].rooms[KEY_TAB] = [];
   return state.data[id];
 }
 
@@ -322,11 +244,8 @@ function uid(){ return Math.random().toString(36).slice(2,9); }
 async function loadData(){
   const localVillas = localStorage.getItem(VILLA_LIST_KEY);
   const localData = localStorage.getItem(DATA_KEY);
-  const localUsers = localStorage.getItem(USERS_KEY);
-
   if(localVillas) state.villas = JSON.parse(localVillas);
   if(localData) state.data = JSON.parse(localData);
-  if(localUsers) state.users = JSON.parse(localUsers);
 
   if(dbClient){
     try{
@@ -342,17 +261,10 @@ async function loadData(){
         localStorage.setItem(DATA_KEY, JSON.stringify(data.value));
       }
 
-      const { data: uList } = await dbClient.from('villa_store').select('value').eq('key', USERS_KEY).maybeSingle();
-      if(uList && uList.value) {
-        state.users = uList.value;
-        localStorage.setItem(USERS_KEY, JSON.stringify(uList.value));
-      }
-
       dbClient.channel('public:villa_store')
         .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'villa_store' }, payload => {
           if(payload.new && payload.new.key === DATA_KEY){ state.data = payload.new.value; render(); }
           if(payload.new && payload.new.key === VILLA_LIST_KEY){ state.villas = payload.new.value; render(); }
-          if(payload.new && payload.new.key === USERS_KEY){ state.users = payload.new.value; render(); }
         }).subscribe();
     }catch(e){ console.error("Cloud load error:", e); }
   }
@@ -363,7 +275,6 @@ async function loadData(){
 async function saveData(){
   localStorage.setItem(VILLA_LIST_KEY, JSON.stringify(state.villas));
   localStorage.setItem(DATA_KEY, JSON.stringify(state.data));
-  localStorage.setItem(USERS_KEY, JSON.stringify(state.users));
 
   if(!dbClient) return;
   state.saveStatus = 'saving';
@@ -372,12 +283,11 @@ async function saveData(){
   try{
     const { error: err1 } = await dbClient.from('villa_store').upsert({ key: DATA_KEY, value: state.data }, { onConflict: 'key' });
     const { error: err2 } = await dbClient.from('villa_store').upsert({ key: VILLA_LIST_KEY, value: state.villas }, { onConflict: 'key' });
-    const { error: err3 } = await dbClient.from('villa_store').upsert({ key: USERS_KEY, value: state.users }, { onConflict: 'key' });
     
-    if(err1 || err2 || err3) {
-      console.error("Save error:", err1, err2, err3);
+    if(err1 || err2) {
+      console.error("Save error:", err1, err2);
       state.saveStatus = 'error';
-      state.lastErrorMsg = ((err1?err1.message:'') + ' ' + (err2?err2.message:'') + ' ' + (err3?err3.message:'')).trim();
+      state.lastErrorMsg = (err1 ? err1.message : '') + ' ' + (err2 ? err2.message : '');
     } else {
       state.saveStatus = 'saved';
       state.lastErrorMsg = '';
@@ -413,6 +323,7 @@ function triggerPhotoUpload(id, room, itemId){
   document.getElementById('global-file-input').click();
 }
 
+// ✅ Зургийг 400px, 0.4 чанартай болгож компресс хийх функц
 function handleFileSelected(input){
   if(!input.files || !input.files[0] || !state.uploadTarget) return;
   const file = input.files[0];
@@ -461,78 +372,6 @@ function viewPhoto(url){
 }
 function closePhotoModal(){ document.getElementById('photo-modal').style.display = 'none'; }
 
-// PIN & User Management
-function openPinModal() {
-  document.getElementById('old-pin').value = '';
-  document.getElementById('new-pin').value = '';
-  document.getElementById('confirm-pin').value = '';
-  document.getElementById('pin-modal').style.display = 'flex';
-}
-function closePinModal() { document.getElementById('pin-modal').style.display = 'none'; }
-
-function saveNewPin() {
-  const oldPin = document.getElementById('old-pin').value.trim();
-  const newPin = document.getElementById('new-pin').value.trim();
-  const confirmPin = document.getElementById('confirm-pin').value.trim();
-
-  if (oldPin !== state.currentUser.pin) { alert("Одоогийн ПИН код буруу байна!"); return; }
-  if (!newPin || newPin.length < 4) { alert("Шинэ ПИН код хамгийн багадаа 4 оронтой байна!"); return; }
-  if (newPin !== confirmPin) { alert("Шинэ ПИН код хоорондоо тарахгүй байна!"); return; }
-
-  state.currentUser.pin = newPin;
-  saveData();
-  closePinModal();
-  alert("ПИН код амжилттай солигдлоо!");
-}
-
-function openUsersModal() {
-  verifyAdminPermission("Хэрэглэгчид удирдах", () => {
-    renderUsersList();
-    document.getElementById('users-modal').style.display = 'flex';
-  });
-}
-function closeUsersModal() { document.getElementById('users-modal').style.display = 'none'; }
-
-function renderUsersList() {
-  const tbody = document.getElementById('users-table-body');
-  tbody.innerHTML = '';
-  state.users.forEach(u => {
-    tbody.innerHTML += `
-      <tr>
-        <td><b>${u.name}</b></td>
-        <td><span class="status-chip ${u.role==='admin'?'status-good-bg':'status-warn-bg'}">${u.role}</span></td>
-        <td><code>${u.pin}</code></td>
-        <td>
-          ${u.id !== state.currentUser.id ? `<button class="btn-danger" onclick="deleteUser('${u.id}')">&times;</button>` : ''}
-        </td>
-      </tr>
-    `;
-  });
-}
-
-function createNewUser() {
-  const name = document.getElementById('new-user-name').value.trim();
-  const pin = document.getElementById('new-user-pin').value.trim();
-  const role = document.getElementById('new-user-role').value;
-
-  if(!name || !pin) { alert("Нэр болон ПИН кодыг гүйцэд оруулна уу!"); return; }
-  if(state.users.some(u => u.pin === pin)) { alert("Ийм ПИН кодтой хэрэглэгч байна! Өөр ПИН сонгоно уу."); return; }
-
-  state.users.push({ id: uid(), name, pin, role });
-  saveData();
-  renderUsersList();
-  document.getElementById('new-user-name').value = '';
-  document.getElementById('new-user-pin').value = '';
-}
-
-function deleteUser(userId) {
-  if(confirm("Энэ хэрэглэгчийг устгах уу?")) {
-    state.users = state.users.filter(u => u.id !== userId);
-    saveData();
-    renderUsersList();
-  }
-}
-
 function addVillaPrompt(){
   verifyAdminPermission("Шинэ Вилла нэмэх", () => {
     const name = prompt("Шинэ Вилла дугаарыг оруулна уу:");
@@ -569,9 +408,6 @@ function villaIssueCount(id){
   (v.rooms[REPAIR_TAB]||[]).forEach(item => {
     if(!item.isDone) count++;
   });
-  (v.rooms[KEY_TAB]||[]).forEach(item => {
-    if(item.status && item.status === "Алга болсон / Дутуу") count++;
-  });
   return count;
 }
 
@@ -590,14 +426,9 @@ function render(){
       <div class="header-row">
         <div>
           <h1>Villa Тооллого & Засвар</h1>
-          <div class="totalcount">${state.villas.length} байшин &middot; ${totalIssuesAll()} нээлттэй засвар / гэмтэл / түлхүүр</div>
+          <div class="totalcount">${state.villas.length} байшин &middot; ${totalIssuesAll()} нээлттэй засвар / гэмтэл</div>
         </div>
-        <div style="display:flex; gap:8px; align-items:center;">
-          <span style="font-size:0.85rem; font-weight:bold;">👤 ${state.currentUser?state.currentUser.name:''} (${state.currentUser?state.currentUser.role:''})</span>
-          <button class="btn btn-ghost" onclick="openPinModal()">🔑 ПИН солих</button>
-          ${state.currentUser && state.currentUser.role === 'admin' ? `<button class="btn btn-ghost" onclick="openUsersModal()">👥 Хэрэглэгчид</button>` : ''}
-          <button class="btn btn-ghost" onclick="location.reload()">Гарах</button>
-        </div>
+        <button class="btn btn-ghost" onclick="location.reload()">Гарах</button>
       </div>
       <div style="margin-top:12px; display:flex; align-items:center; justify-content:space-between;">
         <button class="btn btn-primary" onclick="toggleReport()">${state.view==='report' ? '← Буцах' : '📋 Нэгтгэлийн тайлан харах'}</button>
@@ -657,10 +488,6 @@ function renderVillaDetail(id){
     html += `<div class="room-tab ${active}" onclick="setActiveRoom('${r}')">${r}</div>`;
   });
   
-  const keyActive = state.activeRoom === KEY_TAB ? 'active' : '';
-  const keyCount = (v.rooms[KEY_TAB]||[]).filter(i => i.status === "Алга болсон / Дутуу").length;
-  html += `<div class="room-tab key-tab ${keyActive}" onclick="setActiveRoom('${KEY_TAB}')">🔑 Түлхүүр ${keyCount>0 ? `(${keyCount})`:''}</div>`;
-
   const repairActive = state.activeRoom === REPAIR_TAB ? 'active' : '';
   const repairCount = (v.rooms[REPAIR_TAB]||[]).filter(i => !i.isDone).length;
   html += `<div class="room-tab repair-tab ${repairActive}" onclick="setActiveRoom('${REPAIR_TAB}')">🛠️ Засвар ${repairCount>0 ? `(${repairCount})`:''}</div></div>`;
@@ -669,7 +496,7 @@ function renderVillaDetail(id){
 
   if(state.activeRoom === REPAIR_TAB){
     html += `<div class="card room-panel" style="padding:16px;">
-      <p style="font-size:0.85rem; color:var(--ink-soft); margin-bottom:12px;">🔒 Засвар дууссан ("Засагдсан") гэж тэмдэглэх болон ажлыг устгахад Админ ПИН шаардлагатай.</p>
+      <p style="font-size:0.85rem; color:var(--ink-soft); margin-bottom:12px;">🔒 Засвар дууссан ("Засагдсан") гэж тэмдэглэх болон ажлыг устгахад Админ пин код шаардлагатай.</p>
       <table><thead><tr>
         <th class="col-num">№</th>
         <th class="col-photo">Зураг</th>
@@ -701,40 +528,6 @@ function renderVillaDetail(id){
     html += `</tbody></table>
       <button class="btn btn-ghost" style="margin-top:12px;" onclick="addItem('${id}','${REPAIR_TAB}')">+ Засварын ажил нэмэх</button>
     </div>`;
-
-  } else if(state.activeRoom === KEY_TAB) {
-    html += `<div class="card room-panel"><table><thead><tr>
-      <th class="col-num">№</th>
-      <th class="col-photo">Зураг</th>
-      <th>Түлхүүрийн нэр / Дугаар</th>
-      <th class="col-count">Тоо</th>
-      <th class="col-status">Төлөв / Байршил</th>
-      <th class="col-del"></th>
-    </tr></thead><tbody>`;
-
-    items.forEach((item, idx) => {
-      const photoHtml = item.photo 
-        ? `<img src="${item.photo}" class="photo-thumb" onclick="viewPhoto('${item.photo}')">` 
-        : `<button class="photo-thumb" onclick="triggerPhotoUpload('${id}','${KEY_TAB}','${item.id}')">📷</button>`;
-
-      html += `
-        <tr>
-          <td class="col-num">${idx+1}</td>
-          <td class="col-photo">${photoHtml}</td>
-          <td><input class="item-input" type="text" value="${item.name||''}" placeholder="Үндсэн түлхүүр, Мастер гэх мэт" onchange="updateItem('${id}','${KEY_TAB}','${item.id}','name',this.value)"></td>
-          <td class="col-count"><input class="item-input count-input" type="number" value="${item.count||1}" onchange="updateItem('${id}','${KEY_TAB}','${item.id}','count',this.value)"></td>
-          <td class="col-status">
-            <select class="status-select ${keyStatusClass(item.status)}" onchange="updateItem('${id}','${KEY_TAB}','${item.id}','status',this.value)">
-              ${["Бүрэн (Байрандаа)", "Ажилчдад байгаа", "Захиалагчид байгаа", "Алга болсон / Дутуу"].map(s => `<option value="${s}" ${item.status===s?'selected':''}>${s}</option>`).join('')}
-            </select>
-          </td>
-          <td class="col-del"><button class="btn-danger" onclick="deleteItemProtected('${id}','${KEY_TAB}','${item.id}')">&times;</button></td>
-        </tr>
-      `;
-    });
-    html += `</tbody></table>
-    <button class="btn btn-ghost" style="margin-top:12px;" onclick="addItem('${id}','${KEY_TAB}')">+ Түлхүүр нэмэх</button></div>`;
-
   } else {
     html += `<div class="card room-panel"><table><thead><tr>
       <th class="col-num">№</th>
@@ -775,7 +568,7 @@ function renderVillaDetail(id){
 function renderReport(){
   let html = `
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
-      <h2>📋 Нийт Засвар, Түлхүүр болон Гэмтэлтэй Тавилгын Нэгтгэл</h2>
+      <h2>📋 Нийт Засвар ба Гэмтэлтэй Тавилгын Нэгтгэл</h2>
       <button class="btn btn-primary no-print" onclick="window.print()">🖨️ Тайлан хэвлэх (Print/PDF)</button>
     </div>
     <div class="card">
@@ -800,26 +593,7 @@ function renderReport(){
   html += `</tbody></table></div>`;
 
   html += `<div class="card">
-    <h3 style="margin-bottom:10px;">2. Түлхүүрийн Тайлан (Алга болсон / Анхаарах)</h3>
-    <table><thead><tr><th>Villa</th><th>Зураг</th><th>Түлхүүр</th><th>Тоо</th><th>Төлөв / Байршил</th></tr></thead><tbody>`;
-
-  let hasKeyIssues = false;
-  state.villas.forEach(id => {
-    const v = state.data[id];
-    if(!v) return;
-    (v.rooms[KEY_TAB]||[]).forEach(item => {
-      if(item.status && item.status === "Алга болсон / Дутуу"){
-        hasKeyIssues = true;
-        const photoThumb = item.photo ? `<img src="${item.photo}" class="photo-thumb" onclick="viewPhoto('${item.photo}')">` : '-';
-        html += `<tr><td><b>Villa ${id}</b></td><td>${photoThumb}</td><td>${item.name||'-'}</td><td>${item.count||1}</td><td><span class="status-chip ${keyStatusClass(item.status)}">${item.status}</span></td></tr>`;
-      }
-    });
-  });
-  if(!hasKeyIssues) html += `<tr><td colspan="5" style="text-align:center; color:var(--ink-soft); padding:12px;">Алга болсон/дутуу түлхүүр одоогоор байхгүй байна.</td></tr>`;
-  html += `</tbody></table></div>`;
-
-  html += `<div class="card">
-    <h3 style="margin-bottom:10px;">3. Хийгдэх тусгай засварын ажлууд</h3>
+    <h3 style="margin-bottom:10px;">2. Хийгдэх тусгай засварын ажлууд</h3>
     <table><thead><tr><th>Villa</th><th>Зураг</th><th>Засварын ажил / Тэмдэглэл</th><th>Төлөв</th></tr></thead><tbody>`;
 
   let hasRepairs = false;
@@ -847,16 +621,9 @@ function statusClass(status){
   return "status-bad-bg";
 }
 
-function keyStatusClass(status){
-  if(status === "Бүрэн (Байрандаа)") return "status-good-bg";
-  if(status === "Алга болсон / Дутуу") return "status-bad-bg";
-  return "status-warn-bg";
-}
-
 function addItem(id, room){
   ensureVilla(id);
-  const defaultStatus = room === KEY_TAB ? "Бүрэн (Байрандаа)" : "Гэмтэлгүй байгаа";
-  state.data[id].rooms[room].push({id: uid(), name:"", count:1, status: defaultStatus, photo:null, isDone: false});
+  state.data[id].rooms[room].push({id: uid(), name:"", count:1, status:"Гэмтэлгүй байгаа", photo:null, isDone: false});
   saveData(); render();
 }
 
@@ -881,7 +648,7 @@ function toggleDoneProtected(id, room, itemId, checkbox) {
 }
 
 function deleteItemProtected(id, room, itemId){
-  verifyAdminPermission("Ажил/Тавилга/Түлхүүр устгах", () => {
+  verifyAdminPermission("Ажил/Тавилга устгах", () => {
     state.data[id].rooms[room] = state.data[id].rooms[room].filter(i => i.id !== itemId);
     saveData(); render();
   });
