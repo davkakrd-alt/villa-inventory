@@ -182,10 +182,13 @@ try {
   </div>
 </div>
 
-<input type="file" id="global-file-input" accept="image/*" style="display:none;" onchange="handleFileSelected(this)">
+<!-- ✅ Олноор нь файл сонгох боломжтой (multiple) болгож өөрчилсөн -->
+<input type="file" id="global-file-input" accept="image/*" multiple style="display:none;" onchange="handleFileSelected(this)">
 
 <script>
-const ADMIN_PIN = "8899"; 
+// 🔑 ЭНД БАЙГАА "1234"-ИЙГ ЭВТЭЙХЭН ӨӨРИЙН ХҮССЭН ШИНЭ НУУЦ ҮГЭЭРЭЭ СУУЛГАЖ СОЛЬЖ БОЛНО
+const ADMIN_PIN = "1234"; 
+
 let ROOM_TYPES = ["Унтлагын", "Зочны", "Гадна", "Угаалгын", "Гал тогоо"];
 const REPAIR_TAB = "🛠️ Засвар";
 const DATA_KEY = "villa-inventory-data-v2";
@@ -323,12 +326,48 @@ function triggerPhotoUpload(id, room, itemId){
   document.getElementById('global-file-input').click();
 }
 
-// ✅ Зургийг 400px, 0.4 чанартай болгож компресс хийх функц
+// ✅ Зургийг олноор нь боловсруулж хадгалах шинэчилсэн функц
 function handleFileSelected(input){
-  if(!input.files || !input.files[0] || !state.uploadTarget) return;
-  const file = input.files[0];
-  const reader = new FileReader();
+  if(!input.files || input.files.length === 0 || !state.uploadTarget) return;
+  
+  const files = Array.from(input.files);
+  const { id, room, itemId } = state.uploadTarget;
+  
+  let processedCount = 0;
+  
+  files.forEach((file, index) => {
+    processImage(file, (compressedUrl) => {
+      if(index === 0) {
+        // Эхний зургийг тухайн дарсан мөрөнд хавсаргана
+        const item = state.data[id].rooms[room].find(i => i.id === itemId);
+        if(item) item.photo = compressedUrl;
+      } else {
+        // Дараагийн зургуудад шинээр мөр нэмж оруулна
+        const fileNameWithoutExt = file.name.substring(0, file.name.lastIndexOf('.')) || file.name;
+        state.data[id].rooms[room].push({
+          id: uid(),
+          name: fileNameWithoutExt,
+          count: 1,
+          status: "Гэмтэлгүй байгаа",
+          photo: compressedUrl,
+          isDone: false
+        });
+      }
+      
+      processedCount++;
+      if(processedCount === files.length) {
+        saveData();
+        render();
+      }
+    });
+  });
+  
+  input.value = "";
+}
 
+// ✅ Зургийн хэмжээг багасгаж компресс хийх туслах функц
+function processImage(file, callback) {
+  const reader = new FileReader();
   reader.onload = function(e){
     const img = new Image();
     img.src = e.target.result;
@@ -351,16 +390,7 @@ function handleFileSelected(input){
       const ctx = canvas.getContext('2d');
       ctx.drawImage(img, 0, 0, w, h);
 
-      const compressedUrl = canvas.toDataURL('image/jpeg', 0.4);
-
-      const { id, room, itemId } = state.uploadTarget;
-      const item = state.data[id].rooms[room].find(i => i.id === itemId);
-      if(item){
-        item.photo = compressedUrl;
-        saveData();
-        render();
-      }
-      input.value = "";
+      callback(canvas.toDataURL('image/jpeg', 0.4));
     };
   };
   reader.readAsDataURL(file);
