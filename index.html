@@ -148,7 +148,6 @@
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
-// ✅ Үндсэн URL болон API Key
 const SUPABASE_URL = "https://tmkiuebrkmfnpmuyxxwd.supabase.co";
 const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRta2l1ZWJya21mbnBtdXl4eHdkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODYxNjY1MTgsImV4cCI6MjEwMTc0MjUxOH0.eT0Mm31Tdc2gv6tyPz2kUrVLXYyG1Opn3LNr3TeRsMM";
 
@@ -242,10 +241,14 @@ function ensureVilla(id){
 function uid(){ return Math.random().toString(36).slice(2,9); }
 
 async function loadData(){
-  const localVillas = localStorage.getItem(VILLA_LIST_KEY);
-  const localData = localStorage.getItem(DATA_KEY);
-  if(localVillas) state.villas = JSON.parse(localVillas);
-  if(localData) state.data = JSON.parse(localData);
+  try {
+    const localVillas = localStorage.getItem(VILLA_LIST_KEY);
+    const localData = localStorage.getItem(DATA_KEY);
+    if(localVillas) state.villas = JSON.parse(localVillas);
+    if(localData) state.data = JSON.parse(localData);
+  } catch(e) {
+    console.error("Local load error:", e);
+  }
 
   if(dbClient){
     try{
@@ -273,10 +276,17 @@ async function loadData(){
 }
 
 async function saveData(){
-  localStorage.setItem(VILLA_LIST_KEY, JSON.stringify(state.villas));
-  localStorage.setItem(DATA_KEY, JSON.stringify(state.data));
+  try {
+    localStorage.setItem(VILLA_LIST_KEY, JSON.stringify(state.villas));
+    localStorage.setItem(DATA_KEY, JSON.stringify(state.data));
+    state.saveStatus = 'saved';
+  } catch(e) {
+    console.error("LocalStorage save error:", e);
+    state.saveStatus = 'error';
+    state.lastErrorMsg = "Local санах ой дүүрсэн эвдэрсэн байна. Зургуудыг устгана уу.";
+  }
 
-  if(!dbClient) return;
+  if(!dbClient) { renderSaveStatus(); return; }
   state.saveStatus = 'saving';
   renderSaveStatus();
 
@@ -285,7 +295,7 @@ async function saveData(){
     const { error: err2 } = await dbClient.from('villa_store').upsert({ key: VILLA_LIST_KEY, value: state.villas }, { onConflict: 'key' });
     
     if(err1 || err2) {
-      console.error("Save error:", err1, err2);
+      console.error("Cloud Save error:", err1, err2);
       state.saveStatus = 'error';
       state.lastErrorMsg = (err1 ? err1.message : '') + ' ' + (err2 ? err2.message : '');
     } else {
@@ -307,10 +317,10 @@ function renderSaveStatus(){
     el.textContent = '☁️ Хадгалж байна...';
     el.style.color = '#B5702C';
   } else if(state.saveStatus === 'saved') {
-    el.textContent = '✓ Хадгалагдсан (Cloud)';
+    el.textContent = '✓ Хадгалагдсан';
     el.style.color = '#2E7D32';
   } else {
-    el.textContent = '⚠️ Серверт хадгалагдсангүй (Локал санах ойд хадгалагдсан)';
+    el.textContent = '⚠️ Хадгалагдсангүй (Алдаа)';
     el.style.color = '#A63F2B';
     el.style.cursor = 'pointer';
     el.title = "Дэлгэрэнгүй харах бол дарна уу";
@@ -323,7 +333,7 @@ function triggerPhotoUpload(id, room, itemId){
   document.getElementById('global-file-input').click();
 }
 
-// ✅ Зургийг 400px, 0.4 чанартай болгож компресс хийх функц
+/* ✅ Зургийг хэт том биш (250px, quality 0.25) болгож Бага багтаамжтай болгох */
 function handleFileSelected(input){
   if(!input.files || !input.files[0] || !state.uploadTarget) return;
   const file = input.files[0];
@@ -334,7 +344,7 @@ function handleFileSelected(input){
     img.src = e.target.result;
     img.onload = function(){
       const canvas = document.createElement('canvas');
-      const maxDim = 400; 
+      const maxDim = 250; // Зургийн хэмжээг жижигсгэж локал санах ойд багтаана
       let w = img.width;
       let h = img.height;
 
@@ -351,7 +361,7 @@ function handleFileSelected(input){
       const ctx = canvas.getContext('2d');
       ctx.drawImage(img, 0, 0, w, h);
 
-      const compressedUrl = canvas.toDataURL('image/jpeg', 0.4);
+      const compressedUrl = canvas.toDataURL('image/jpeg', 0.25);
 
       const { id, room, itemId } = state.uploadTarget;
       const item = state.data[id].rooms[room].find(i => i.id === itemId);
@@ -432,7 +442,7 @@ function render(){
       </div>
       <div style="margin-top:12px; display:flex; align-items:center; justify-content:space-between;">
         <button class="btn btn-primary" onclick="toggleReport()">${state.view==='report' ? '← Буцах' : '📋 Нэгтгэлийн тайлан харах'}</button>
-        <span id="save-status" style="font-size:0.8rem; font-weight:bold; color:#2E7D32;">✓ Хадгалагдсан (Cloud)</span>
+        <span id="save-status" style="font-size:0.8rem; font-weight:bold; color:#2E7D32;">✓ Хадгалагдсан</span>
       </div>
     </header>
   `;
@@ -515,7 +525,7 @@ function renderVillaDetail(id){
       html += `<tr class="${isDoneClass}">
         <td class="col-num">${idx+1}</td>
         <td class="col-photo">${photoHtml}</td>
-        <td><input class="item-input" type="text" value="${item.name||''}" placeholder="Жишээ нь: Шүршүүрийн хоолой засах" onchange="updateItem('${id}','${REPAIR_TAB}','${item.id}','name',this.value)"></td>
+        <td><input class="item-input" type="text" value="${item.name||''}" placeholder="Жишээ нь: Шүршүүрийн хоолой засах" oninput="updateItem('${id}','${REPAIR_TAB}','${item.id}','name',this.value)"></td>
         <td class="col-status">
           <label style="cursor:pointer; display:inline-flex; align-items:center; gap:4px; font-weight:bold; font-size:0.8rem; color:${item.isDone ? 'var(--green)' : 'var(--red)'};">
             <input type="checkbox" ${item.isDone ? 'checked' : ''} onchange="toggleDoneProtected('${id}','${REPAIR_TAB}','${item.id}', this)">
@@ -547,8 +557,8 @@ function renderVillaDetail(id){
         <tr>
           <td class="col-num">${idx+1}</td>
           <td class="col-photo">${photoHtml}</td>
-          <td><input class="item-input" type="text" value="${item.name||''}" placeholder="Тавилгын нэр" onchange="updateItem('${id}','${state.activeRoom}','${item.id}','name',this.value)"></td>
-          <td class="col-count"><input class="item-input count-input" type="number" value="${item.count||1}" onchange="updateItem('${id}','${state.activeRoom}','${item.id}','count',this.value)"></td>
+          <td><input class="item-input" type="text" value="${item.name||''}" placeholder="Тавилгын нэр" oninput="updateItem('${id}','${state.activeRoom}','${item.id}','name',this.value)"></td>
+          <td class="col-count"><input class="item-input count-input" type="number" value="${item.count||1}" oninput="updateItem('${id}','${state.activeRoom}','${item.id}','count',this.value)"></td>
           <td class="col-status">
             <select class="status-select ${statusClass(item.status)}" onchange="updateItem('${id}','${state.activeRoom}','${item.id}','status',this.value)">
               ${["Гэмтэлгүй байгаа", "Бага зэрэг гэмтэлтэй", "Эвдэрсэн", "Гэмтэлтэй", "Дутуу"].map(s => `<option value="${s}" ${item.status===s?'selected':''}>${s}</option>`).join('')}
@@ -632,6 +642,9 @@ function updateItem(id, room, itemId, field, value){
   if(!item) return;
   item[field] = value;
   saveData();
+  if(field === 'status') {
+    render(); // Төлөв өөрчлөгдөхөд вилла дээрх улаан цэгийг шинэчлэхийн тулд
+  }
 }
 
 function toggleDoneProtected(id, room, itemId, checkbox) {
