@@ -184,9 +184,6 @@ try {
 <input type="file" id="global-file-input" accept="image/*" style="display:none;" onchange="handleFileSelected(this)">
 
 <script>
-// ==========================================
-// INDEXEDDB ХЭСЭГ (LocalStorage-ийг бүрэн орлох)
-// ==========================================
 class LocalDB {
   constructor(dbName = 'VillaAppDB', storeName = 'app_data') {
     this.dbName = dbName;
@@ -237,9 +234,6 @@ class LocalDB {
 
 const idb = new LocalDB();
 
-// ==========================================
-// ҮНДСЭН ЛОГИК БОЛОН ҮЙЛДЛҮҮД
-// ==========================================
 const ADMIN_PIN = "1234"; 
 let ROOM_TYPES = ["Унтлагын", "Зочны", "Гадна", "Угаалгын", "Гал тогоо"];
 const REPAIR_TAB = "🛠️ Засвар";
@@ -332,7 +326,6 @@ async function loadData(){
 }
 
 async function saveData(){
-  // 1. IndexedDB дээр локалаар хадгалах
   await idb.setItem(VILLA_LIST_KEY, state.villas);
   await idb.setItem(DATA_KEY, state.data);
 
@@ -341,7 +334,6 @@ async function saveData(){
   renderSaveStatus();
 
   try{
-    // Сервер дээр алдаа гарахаас сэргийлж JSON цэвэрлэгээ хийх
     const cloudData = JSON.parse(JSON.stringify(state.data));
     const cloudVillas = JSON.parse(JSON.stringify(state.villas));
 
@@ -387,7 +379,7 @@ function triggerPhotoUpload(id, room, itemId){
   document.getElementById('global-file-input').click();
 }
 
-// Зургийг 300px, 0.3 чанартай болгож компресс хийх
+// Зургийг 200px, 0.15 чанартай болгож шахах (Supabase timeout-аас сэргийлнэ)
 function handleFileSelected(input){
   if(!input.files || !input.files[0] || !state.uploadTarget) return;
   const file = input.files[0];
@@ -398,7 +390,7 @@ function handleFileSelected(input){
     img.src = e.target.result;
     img.onload = async function(){
       const canvas = document.createElement('canvas');
-      const maxDim = 300; 
+      const maxDim = 200; 
       let w = img.width;
       let h = img.height;
 
@@ -415,7 +407,7 @@ function handleFileSelected(input){
       const ctx = canvas.getContext('2d');
       ctx.drawImage(img, 0, 0, w, h);
 
-      const compressedUrl = canvas.toDataURL('image/jpeg', 0.3);
+      const compressedUrl = canvas.toDataURL('image/jpeg', 0.15);
 
       const { id, room, itemId } = state.uploadTarget;
       const item = state.data[id].rooms[room].find(i => i.id === itemId);
@@ -697,6 +689,7 @@ async function updateItem(id, room, itemId, field, value){
   if(!item) return;
   item[field] = value;
   await saveData();
+  renderSaveStatus();
 }
 
 function toggleDoneProtected(id, room, itemId, checkbox) {
