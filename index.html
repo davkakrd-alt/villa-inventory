@@ -148,7 +148,6 @@
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
-// ✅ Үндсэн URL болон API Key
 const SUPABASE_URL = "https://tmkiuebrkmfnpmuyxxwd.supabase.co";
 const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRta2l1ZWJya21mbnBtdXl4eHdkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODYxNjY1MTgsImV4cCI6MjEwMTc0MjUxOH0.eT0Mm31Tdc2gv6tyPz2kUrVLXYyG1Opn3LNr3TeRsMM";
 
@@ -281,13 +280,13 @@ async function saveData(){
   renderSaveStatus();
 
   try{
-    const { error: err1 } = await dbClient.from('villa_store').upsert({ key: DATA_KEY, value: state.data }, { onConflict: 'key' });
-    const { error: err2 } = await dbClient.from('villa_store').upsert({ key: VILLA_LIST_KEY, value: state.villas }, { onConflict: 'key' });
+    const res1 = await dbClient.from('villa_store').upsert({ key: DATA_KEY, value: state.data });
+    const res2 = await dbClient.from('villa_store').upsert({ key: VILLA_LIST_KEY, value: state.villas });
     
-    if(err1 || err2) {
-      console.error("Save error:", err1, err2);
+    if(res1.error || res2.error) {
+      console.error("Save error:", res1.error, res2.error);
       state.saveStatus = 'error';
-      state.lastErrorMsg = (err1 ? err1.message : '') + ' ' + (err2 ? err2.message : '');
+      state.lastErrorMsg = (res1.error ? res1.error.message : '') + ' ' + (res2.error ? res2.error.message : '');
     } else {
       state.saveStatus = 'saved';
       state.lastErrorMsg = '';
@@ -310,11 +309,11 @@ function renderSaveStatus(){
     el.textContent = '✓ Хадгалагдсан (Cloud)';
     el.style.color = '#2E7D32';
   } else {
-    el.textContent = '⚠️ Серверт хадгалагдсангүй (Локал санах ойд хадгалагдсан)';
+    el.textContent = '⚠️ Хадгалагдсангүй (Алдаа харах)';
     el.style.color = '#A63F2B';
     el.style.cursor = 'pointer';
     el.title = "Дэлгэрэнгүй харах бол дарна уу";
-    el.onclick = () => alert("Алдааны мэдээлэл: " + state.lastErrorMsg);
+    el.onclick = () => alert("Серверт хадгалахад гарсан алдаа: " + state.lastErrorMsg + "\n\nШийдэл: Supabase дээр SQL ажиллуулах шаардлагатай.");
   }
 }
 
@@ -323,7 +322,7 @@ function triggerPhotoUpload(id, room, itemId){
   document.getElementById('global-file-input').click();
 }
 
-// ✅ Зургийг 400px, 0.4 чанартай болгож компресс хийх функц
+// Зургийг 300px, 0.3 чанартай болгож компресс хийх
 function handleFileSelected(input){
   if(!input.files || !input.files[0] || !state.uploadTarget) return;
   const file = input.files[0];
@@ -334,7 +333,7 @@ function handleFileSelected(input){
     img.src = e.target.result;
     img.onload = function(){
       const canvas = document.createElement('canvas');
-      const maxDim = 400; 
+      const maxDim = 300; 
       let w = img.width;
       let h = img.height;
 
@@ -351,7 +350,7 @@ function handleFileSelected(input){
       const ctx = canvas.getContext('2d');
       ctx.drawImage(img, 0, 0, w, h);
 
-      const compressedUrl = canvas.toDataURL('image/jpeg', 0.4);
+      const compressedUrl = canvas.toDataURL('image/jpeg', 0.3);
 
       const { id, room, itemId } = state.uploadTarget;
       const item = state.data[id].rooms[room].find(i => i.id === itemId);
@@ -440,6 +439,7 @@ function render(){
   if(state.view === 'report'){
     html += renderReport();
     app.innerHTML = html;
+    renderSaveStatus();
     return;
   }
 
