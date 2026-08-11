@@ -184,6 +184,62 @@ try {
 <input type="file" id="global-file-input" accept="image/*" style="display:none;" onchange="handleFileSelected(this)">
 
 <script>
+// ==========================================
+// INDEXEDDB ХЭСЭГ (LocalStorage-ийг бүрэн орлох)
+// ==========================================
+class LocalDB {
+  constructor(dbName = 'VillaAppDB', storeName = 'app_data') {
+    this.dbName = dbName;
+    this.storeName = storeName;
+    this.db = null;
+  }
+
+  async init() {
+    if (this.db) return this.db;
+    return new Promise((resolve, reject) => {
+      const request = indexedDB.open(this.dbName, 1);
+      request.onupgradeneeded = (e) => {
+        const db = e.target.result;
+        if (!db.objectStoreNames.contains(this.storeName)) {
+          db.createObjectStore(this.storeName);
+        }
+      };
+      request.onsuccess = (e) => {
+        this.db = e.target.result;
+        resolve(this.db);
+      };
+      request.onerror = (e) => reject(e.target.error);
+    });
+  }
+
+  async setItem(key, value) {
+    await this.init();
+    return new Promise((resolve, reject) => {
+      const tx = this.db.transaction([this.storeName], 'readwrite');
+      const store = tx.objectStore(this.storeName);
+      const req = store.put(value, key);
+      req.onsuccess = () => resolve(true);
+      req.onerror = (e) => reject(e.target.error);
+    });
+  }
+
+  async getItem(key) {
+    await this.init();
+    return new Promise((resolve, reject) => {
+      const tx = this.db.transaction([this.storeName], 'readonly');
+      const store = tx.objectStore(this.storeName);
+      const req = store.get(key);
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = (e) => reject(e.target.error);
+    });
+  }
+}
+
+const idb = new LocalDB();
+
+// ==========================================
+// ҮНДСЭН ЛОГИК БОЛОН ҮЙЛДЛҮҮД
+// ==========================================
 const ADMIN_PIN = "1234"; 
 let ROOM_TYPES = ["Унтлагын", "Зочны", "Гадна", "Угаалгын", "Гал тогоо"];
 const REPAIR_TAB = "🛠️ Засвар";
@@ -241,27 +297,31 @@ function ensureVilla(id){
 function uid(){ return Math.random().toString(36).slice(2,9); }
 
 async function loadData(){
-  const localVillas = localStorage.getItem(VILLA_LIST_KEY);
-  const localData = localStorage.getItem(DATA_KEY);
-  if(localVillas) state.villas = JSON.parse(localVillas);
-  if(localData) state.data = JSON.parse(localData);
+  try {
+    const localVillas = await idb.getItem(VILLA_LIST_KEY);
+    const localData = await idb.getItem(DATA_KEY);
+    if(localVillas) state.villas = localVillas;
+    if(localData) state.data = localData;
+  } catch(err) {
+    console.error("IndexedDB уншихад алдаа гарлаа:", err);
+  }
 
   if(dbClient){
     try{
       const { data: vList } = await dbClient.from('villa_store').select('value').eq('key', VILLA_LIST_KEY).maybeSingle();
       if(vList && vList.value) {
         state.villas = vList.value;
-        localStorage.setItem(VILLA_LIST_KEY, JSON.stringify(vList.value));
+        await idb.setItem(VILLA_LIST_KEY, vList.value);
       }
 
       const { data } = await dbClient.from('villa_store').select('value').eq('key', DATA_KEY).maybeSingle();
       if(data && data.value) {
         state.data = data.value;
-        localStorage.setItem(DATA_KEY, JSON.stringify(data.value));
+        await idb.setItem(DATA_KEY, data.value);
       }
 
       dbClient.channel('public:villa_store')
-        .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'villa_store' }, payload => {
+        .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'villa_store' }, async payload => {
           if(payload.new && payload.new.key === DATA_KEY){ state.data = payload.new.value; render(); }
           if(payload.new && payload.new.key === VILLA_LIST_KEY){ state.villas = payload.new.value; render(); }
         }).subscribe();
@@ -272,8 +332,8 @@ async function loadData(){
 }
 
 async function saveData(){
-  localStorage.setItem(VILLA_LIST_KEY, JSON.stringify(state.villas));
-  localStorage.setItem(DATA_KEY, JSON.stringify(state.data));
+  await idb.setItem(VILLA_LIST_KEY, state.villas);
+  await idb.setItem(DATA_KEY, state.data);
 
   if(!dbClient) return;
   state.saveStatus = 'saving';
@@ -313,7 +373,7 @@ function renderSaveStatus(){
     el.style.color = '#A63F2B';
     el.style.cursor = 'pointer';
     el.title = "Дэлгэрэнгүй харах бол дарна уу";
-    el.onclick = () => alert("Серверт хадгалахад гарсан алдаа: " + state.lastErrorMsg + "\n\nШийдэл: Supabase дээр SQL ажиллуулах шаардлагатай.");
+    el.onclick = () => alert("Серверт хадгалахад гарсан алдаа: " + state.lastErrorMsg);
   }
 }
 
@@ -331,7 +391,7 @@ function handleFileSelected(input){
   reader.onload = function(e){
     const img = new Image();
     img.src = e.target.result;
-    img.onload = function(){
+    img.onload = async function(){
       const canvas = document.createElement('canvas');
       const maxDim = 300; 
       let w = img.width;
@@ -356,7 +416,7 @@ function handleFileSelected(input){
       const item = state.data[id].rooms[room].find(i => i.id === itemId);
       if(item){
         item.photo = compressedUrl;
-        saveData();
+        await saveData();
         render();
       }
       input.value = "";
@@ -372,25 +432,25 @@ function viewPhoto(url){
 function closePhotoModal(){ document.getElementById('photo-modal').style.display = 'none'; }
 
 function addVillaPrompt(){
-  verifyAdminPermission("Шинэ Вилла нэмэх", () => {
+  verifyAdminPermission("Шинэ Вилла нэмэх", async () => {
     const name = prompt("Шинэ Вилла дугаарыг оруулна уу:");
     if(name && name.trim()){
       const trimmed = name.trim();
       if(state.villas.includes(trimmed)){ alert("Ийм вилла байна!"); return; }
       state.villas.push(trimmed);
       ensureVilla(trimmed);
-      saveData(); render();
+      await saveData(); render();
     }
   });
 }
 
 function deleteVilla(id){
-  verifyAdminPermission(`Villa ${id}-г устгах`, () => {
+  verifyAdminPermission(`Villa ${id}-г устгах`, async () => {
     if(confirm(`Та Villa ${id}-г устгахдаа итгэлтэй байна уу?`)){
       state.villas = state.villas.filter(v => v !== id);
       delete state.data[id];
       if(state.selectedVilla === id) state.selectedVilla = null;
-      saveData(); render();
+      await saveData(); render();
     }
   });
 }
@@ -621,26 +681,26 @@ function statusClass(status){
   return "status-bad-bg";
 }
 
-function addItem(id, room){
+async function addItem(id, room){
   ensureVilla(id);
   state.data[id].rooms[room].push({id: uid(), name:"", count:1, status:"Гэмтэлгүй байгаа", photo:null, isDone: false});
-  saveData(); render();
+  await saveData(); render();
 }
 
-function updateItem(id, room, itemId, field, value){
+async function updateItem(id, room, itemId, field, value){
   const item = state.data[id].rooms[room].find(i => i.id === itemId);
   if(!item) return;
   item[field] = value;
-  saveData();
+  await saveData();
 }
 
 function toggleDoneProtected(id, room, itemId, checkbox) {
   const isChecking = checkbox.checked;
-  verifyAdminPermission(isChecking ? "Засагдсан гэж тэмдэглэх" : "Төлөв өөрчлөх", () => {
+  verifyAdminPermission(isChecking ? "Засагдсан гэж тэмдэглэх" : "Төлөв өөрчлөх", async () => {
     const item = state.data[id].rooms[room].find(i => i.id === itemId);
     if(item) {
       item.isDone = isChecking;
-      saveData();
+      await saveData();
       render();
     }
   });
@@ -648,9 +708,9 @@ function toggleDoneProtected(id, room, itemId, checkbox) {
 }
 
 function deleteItemProtected(id, room, itemId){
-  verifyAdminPermission("Ажил/Тавилга устгах", () => {
+  verifyAdminPermission("Ажил/Тавилга устгах", async () => {
     state.data[id].rooms[room] = state.data[id].rooms[room].filter(i => i.id !== itemId);
-    saveData(); render();
+    await saveData(); render();
   });
 }
 </script>
