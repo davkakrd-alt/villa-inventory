@@ -51,7 +51,7 @@
   .login-box input:focus { outline: none; border-color: var(--teal); }
 
   header{margin-bottom:20px;}
-  .header-row{display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;}
+  .header-row{display:flex; align-items:center; justify-space-between; flex-wrap:wrap; gap:12px;}
   h1{font-size:1.6rem; font-weight:600;}
   .totalcount{font-family:'Courier New',monospace; font-size:0.85rem; color:var(--ink-soft);}
 
@@ -379,7 +379,7 @@ function triggerPhotoUpload(id, room, itemId){
   document.getElementById('global-file-input').click();
 }
 
-// Зургийг 200px, 0.15 чанартай болгож шахах (Supabase timeout-аас сэргийлнэ)
+// Зургийн чанарыг алдагдуулахгүйгээр бага зэрэг хэмжээг нь багасгаж хадгалах
 function handleFileSelected(input){
   if(!input.files || !input.files[0] || !state.uploadTarget) return;
   const file = input.files[0];
@@ -390,24 +390,36 @@ function handleFileSelected(input){
     img.src = e.target.result;
     img.onload = async function(){
       const canvas = document.createElement('canvas');
-      const maxDim = 200; 
+      
+      // Зургийн хэмжээг 0.4 дахин (40% зайд) тохируулж, тодорхой чанарыг хадгална
+      const scale = 0.4;
+      const maxDim = 1200; // Тод чанартай гаргах дээд хэмжээ
+      
       let w = img.width;
       let h = img.height;
 
-      if (w > h && w > maxDim) {
-        h *= maxDim / w;
-        w = maxDim;
-      } else if (h > maxDim) {
-        w *= maxDim / h;
-        h = maxDim;
+      // Эхлээд 0.4 харьцаагаар багасгана
+      w = w * scale;
+      h = h * scale;
+
+      // Хэрэв хэт том зураг байвал 1200px хязгаарт барина
+      if (w > maxDim || h > maxDim) {
+        if (w > h) {
+          h = h * (maxDim / w);
+          w = maxDim;
+        } else {
+          w = w * (maxDim / h);
+          h = maxDim;
+        }
       }
 
-      canvas.width = w;
-      canvas.height = h;
+      canvas.width = Math.round(w);
+      canvas.height = Math.round(h);
       const ctx = canvas.getContext('2d');
-      ctx.drawImage(img, 0, 0, w, h);
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
 
-      const compressedUrl = canvas.toDataURL('image/jpeg', 0.15);
+      // Чанарыг 0.8 (80%) болгож текст, детал тодорхой уншигдахаар хадгална
+      const compressedUrl = canvas.toDataURL('image/jpeg', 0.8);
 
       const { id, room, itemId } = state.uploadTarget;
       const item = state.data[id].rooms[room].find(i => i.id === itemId);
